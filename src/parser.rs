@@ -17,7 +17,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(filename: String) -> Self {
+    pub fn new(filename: &str) -> Self {
         let f = File::open(filename).unwrap();
         let reader = BufReader::new(f);
         Parser {

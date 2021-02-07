@@ -6,7 +6,7 @@ use parser::{CommandType, Parser};
 use std::fs::File;
 use std::io::Write;
 
-pub fn run(filename: String) {
+pub fn run(filename: &str) {
     let hack_filename = get_hack_filename(&filename);
     let mut hack_file = File::create(hack_filename).unwrap();
     let mut parser = Parser::new(filename);
@@ -19,12 +19,10 @@ pub fn run(filename: String) {
                 Code::dest(&parser.dest()),
                 Code::jump(&parser.jump())
             );
-            println!("{}", bits);
             bits.push_str("\n");
             hack_file.write_all(bits.as_bytes()).unwrap();
         } else if parser.command_type() == CommandType::ACommand {
             let mut bits = parser.symbol();
-            println!("{}", bits);
             bits.push_str("\n");
             hack_file.write_all(bits.as_bytes()).unwrap();
         }
