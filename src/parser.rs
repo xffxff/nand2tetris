@@ -1,6 +1,6 @@
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::{fs::File, hint::unreachable_unchecked};
+use std::fs::File;
 
 #[derive(Debug, PartialEq)]
 pub enum CommandType {
