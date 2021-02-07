@@ -1,5 +1,6 @@
 pub mod code;
 pub mod parser;
+pub mod table;
 
 use code::Code;
 use parser::{CommandType, Parser};
@@ -26,6 +27,7 @@ pub fn run(filename: &str) {
             bits.push_str("\r\n");
             hack_file.write_all(bits.as_bytes()).unwrap();
         }
+        hack_file.flush().unwrap();
     }
 }
 

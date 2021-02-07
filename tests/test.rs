@@ -53,3 +53,9 @@ fn test_pong_less_symbol() {
     run("tests/PongL.asm");
     assert!(compare_two_files("tests/PongL.cmp", "tests/PongL.hack"));
 }
+
+#[test]
+fn test_max() {
+    run("tests/Max.asm");
+    assert!(compare_two_files("tests/Max.cmp", "tests/Max.hack"));
+}
