@@ -1,6 +1,6 @@
+use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::fs::File;
 
 #[derive(Debug, PartialEq)]
 pub enum CommandType {
@@ -51,11 +51,13 @@ impl Parser {
     pub fn command_type(&self) -> CommandType {
         if self.current_command.len() == 0 || self.current_command.starts_with("//") {
             return CommandType::WhiteSpace;
-        }
-        if self.current_command.starts_with("@") {
+        } else if self.current_command.starts_with("@") {
             return CommandType::ACommand;
+        } else if self.current_command.starts_with("(") {
+            return CommandType::LCommand;
+        } else {
+            return CommandType::CCommand;
         }
-        return CommandType::CCommand;
     }
 
     pub fn dest(&self) -> String {
@@ -97,14 +99,17 @@ impl Parser {
     }
 
     pub fn symbol(&self) -> String {
-        if self.command_type() != CommandType::ACommand {
-            panic!("current command is not a A Command!");
-        }
-        let symbol = match self.current_command.find("@") {
-            Some(size) => &self.current_command[size + 1..],
-            None => "",
+        let symbol = match self.command_type() {
+            CommandType::ACommand => &self.current_command[1..],
+            CommandType::LCommand => {
+                let size = self.current_command.find(")").unwrap();
+                let left = &self.current_command[..size];
+                &left[1..]
+            }
+            _ => {
+                panic!("Current command neither A command nor C command");
+            }
         };
-        let symbol: i16 = symbol.parse().unwrap();
-        format!("{:016b}", symbol)
+        symbol.to_string()
     }
 }

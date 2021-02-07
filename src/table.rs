@@ -1,15 +1,13 @@
 use std::collections::HashMap;
 
-struct SymbolTalbe {
+pub struct SymbolTalbe {
     table: HashMap<String, i16>,
 }
 
 impl SymbolTalbe {
     pub fn new() -> Self {
         let table = Self::predefined_table();
-        SymbolTalbe {
-            table
-        }
+        SymbolTalbe { table }
     }
 
     pub fn add_entry(&mut self, symbol: &str, address: i16) {
@@ -39,4 +37,3 @@ impl SymbolTalbe {
         table
     }
 }
-

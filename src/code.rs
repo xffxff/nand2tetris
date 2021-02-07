@@ -1,6 +1,13 @@
+use crate::table::SymbolTalbe;
+
 pub struct Code;
 
 impl Code {
+    pub fn symbol(mnemonic: &str, symbol_table: &SymbolTalbe) -> String {
+        let bits: i16 = mnemonic.parse().unwrap();
+        format!("{:016b}", bits)
+    }
+
     pub fn dest(mnemonic: &str) -> String {
         if mnemonic.len() > 3 {
             panic!("Mnemonic is too long!");
