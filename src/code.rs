@@ -4,8 +4,15 @@ pub struct Code;
 
 impl Code {
     pub fn symbol(mnemonic: &str, symbol_table: &SymbolTalbe) -> String {
-        let bits: i16 = mnemonic.parse().unwrap();
-        format!("{:016b}", bits)
+        let res = mnemonic.parse();
+        let address: i16 = match res {
+            Ok(num) => num,
+            Err(_) => {
+                let address = symbol_table.get_address(mnemonic).unwrap();
+                *address
+            }
+        };
+        format!("{:016b}", address)
     }
 
     pub fn dest(mnemonic: &str) -> String {
