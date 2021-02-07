@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::{fs::File, hint::unreachable_unchecked};
 
 #[derive(Debug, PartialEq)]
 pub enum CommandType {
@@ -94,5 +94,17 @@ impl Parser {
             None => "",
         };
         jump.to_string()
+    }
+
+    pub fn symbol(&self) -> String {
+        if self.command_type() != CommandType::ACommand {
+            panic!("current command is not a A Command!");
+        }
+        let symbol = match self.current_command.find("@") {
+            Some(size) => &self.current_command[size + 1..],
+            None => "",
+        };
+        let symbol: i16 = symbol.parse().unwrap();
+        format!("{:016b}", symbol)
     }
 }

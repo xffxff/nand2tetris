@@ -15,7 +15,7 @@ impl Code {
             "AD" => "110",
             "AMD" => "111",
             _ => {
-                panic!("Not a valid mnemonic!");
+                panic!("{} is not a valid mnemonic!", mnemonic);
             }
         };
         bits.to_string()
@@ -35,7 +35,7 @@ impl Code {
             "JLE" => "110",
             "JMP" => "111",
             _ => {
-                panic!("Not a valid mnemonic!");
+                panic!("{} is not a valid mnemonic!", mnemonic);
             }
         };
         bits.to_string()
@@ -75,7 +75,7 @@ impl Code {
             "D&M" => "1000000",
             "D|M" => "1010101",
             _ => {
-                panic!("Not a valid mnemonic!");
+                panic!("{} is not a valid mnemonic!", mnemonic);
             }
         };
         bits.to_string()
