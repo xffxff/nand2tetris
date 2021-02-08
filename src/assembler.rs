@@ -36,7 +36,7 @@ impl Assembler {
                 CommandType::LCommand => {
                     let symbol = self.parser.symbol();
                     self.symbol_table.add_entry(&symbol, line_num);
-                },
+                }
                 CommandType::WhiteSpace => {}
             }
         }
@@ -59,7 +59,7 @@ impl Assembler {
                 hack_file.write_all(bits.as_bytes()).unwrap();
             } else if self.parser.command_type() == CommandType::ACommand {
                 let symbol = self.parser.symbol();
-                let mut bits = Code::symbol(&symbol, &self.symbol_table);
+                let mut bits = Code::symbol(&symbol, &mut self.symbol_table);
                 bits.push_str("\r\n");
                 hack_file.write_all(bits.as_bytes()).unwrap();
             }

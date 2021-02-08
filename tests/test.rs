@@ -65,3 +65,17 @@ fn test_max() {
     assembler.run();
     assert!(compare_two_files("tests/Max.cmp", "tests/Max.hack"));
 }
+
+#[test]
+fn test_rect() {
+    let mut assembler = Assembler::new("tests/Rect.asm");
+    assembler.run();
+    assert!(compare_two_files("tests/Rect.cmp", "tests/Rect.hack"));
+}
+
+#[test]
+fn test_pong() {
+    let mut assembler = Assembler::new("tests/Pong.asm");
+    assembler.run();
+    assert!(compare_two_files("tests/Pong.cmp", "tests/Pong.hack"));
+}

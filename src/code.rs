@@ -1,16 +1,16 @@
-use crate::table::SymbolTalbe;
+use crate::{assembler, table::SymbolTalbe};
 
 pub struct Code;
 
 impl Code {
-    pub fn symbol(mnemonic: &str, symbol_table: &SymbolTalbe) -> String {
+    pub fn symbol(mnemonic: &str, symbol_table: &mut SymbolTalbe) -> String {
         let res = mnemonic.parse();
         let address: i16 = match res {
-            Ok(num) => num,
-            Err(_) => {
-                let address = symbol_table.get_address(mnemonic).unwrap();
-                *address
-            }
+            Ok(address) => address,
+            Err(_) => match symbol_table.get_address(mnemonic) {
+                Some(address) => *address,
+                None => symbol_table.add_alloc(mnemonic),
+            },
         };
         format!("{:016b}", address)
     }

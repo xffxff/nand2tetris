@@ -2,16 +2,27 @@ use std::collections::HashMap;
 
 pub struct SymbolTalbe {
     table: HashMap<String, i16>,
+    next_alloc: i16,
 }
 
 impl SymbolTalbe {
     pub fn new() -> Self {
         let table = Self::predefined_table();
-        SymbolTalbe { table }
+        SymbolTalbe {
+            table,
+            next_alloc: 16,
+        }
     }
 
     pub fn add_entry(&mut self, symbol: &str, address: i16) {
         self.table.insert(symbol.to_string(), address);
+    }
+
+    pub fn add_alloc(&mut self, symbol: &str) -> i16 {
+        let alloc = self.next_alloc;
+        self.table.insert(symbol.to_string(), self.next_alloc);
+        self.next_alloc += 1;
+        alloc
     }
 
     pub fn contains(&self, symbol: &str) -> bool {
