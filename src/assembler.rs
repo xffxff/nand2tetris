@@ -69,7 +69,7 @@ impl Assembler {
 }
 
 fn get_hack_filename(filename: &str) -> String {
-    let filename = match filename.find(".") {
+    let filename = match filename.find('.') {
         Some(size) => &filename[..size],
         None => {
             panic!("{} not a valid assembly file", filename);

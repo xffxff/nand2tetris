@@ -1,4 +1,4 @@
-use crate::{assembler, table::SymbolTalbe};
+use crate::table::SymbolTalbe;
 
 pub struct Code;
 

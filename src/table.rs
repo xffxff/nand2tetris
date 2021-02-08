@@ -48,3 +48,9 @@ impl SymbolTalbe {
         table
     }
 }
+
+impl Default for SymbolTalbe {
+    fn default() -> Self {
+        Self::new()
+    }
+}

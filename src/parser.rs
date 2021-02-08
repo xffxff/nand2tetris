@@ -54,14 +54,14 @@ impl Parser {
     }
 
     pub fn command_type(&self) -> CommandType {
-        if self.current_command.len() == 0 || self.current_command.starts_with("//") {
-            return CommandType::WhiteSpace;
-        } else if self.current_command.starts_with("@") {
-            return CommandType::ACommand;
-        } else if self.current_command.starts_with("(") {
-            return CommandType::LCommand;
+        if self.current_command.is_empty() || self.current_command.starts_with("//") {
+            CommandType::WhiteSpace
+        } else if self.current_command.starts_with('@') {
+            CommandType::ACommand
+        } else if self.current_command.starts_with('(') {
+            CommandType::LCommand
         } else {
-            return CommandType::CCommand;
+            CommandType::CCommand
         }
     }
 
@@ -69,23 +69,23 @@ impl Parser {
         if self.command_type() != CommandType::CCommand {
             panic!("current command is not a C Command!");
         }
-        let dest = match self.current_command.find("=") {
+        let dest = match self.current_command.find('=') {
             Some(size) => &self.current_command[..size],
             None => "",
         };
 
-        return dest.to_string();
+        dest.to_string()
     }
 
     pub fn comp(&self) -> String {
         if self.command_type() != CommandType::CCommand {
             panic!("current command is not a C Command!");
         }
-        let comp_and_jump = match self.current_command.find("=") {
+        let comp_and_jump = match self.current_command.find('=') {
             Some(size) => &self.current_command[size + 1..],
             None => &self.current_command[..],
         };
-        let comp = match comp_and_jump.find(";") {
+        let comp = match comp_and_jump.find(';') {
             Some(size) => &comp_and_jump[..size],
             None => &comp_and_jump[..],
         };
@@ -96,7 +96,7 @@ impl Parser {
         if self.command_type() != CommandType::CCommand {
             panic!("current command is not a C Command!");
         }
-        let jump = match self.current_command.find(";") {
+        let jump = match self.current_command.find(';') {
             Some(size) => &self.current_command[size + 1..],
             None => "",
         };
@@ -107,7 +107,7 @@ impl Parser {
         let symbol = match self.command_type() {
             CommandType::ACommand => &self.current_command[1..],
             CommandType::LCommand => {
-                let size = self.current_command.find(")").unwrap();
+                let size = self.current_command.find(')').unwrap();
                 let left = &self.current_command[..size];
                 &left[1..]
             }
@@ -119,7 +119,7 @@ impl Parser {
     }
 
     pub fn reset(&mut self) {
-        self.reader.seek(SeekFrom::Start(0));
+        self.reader.seek(SeekFrom::Start(0)).unwrap();
         self.current_command.clear();
         self.eof = false;
     }
