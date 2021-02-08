@@ -17,7 +17,7 @@ impl Code {
 
     pub fn dest(mnemonic: &str) -> String {
         if mnemonic.len() > 3 {
-            panic!("Mnemonic is too long!");
+            panic!("Mnemonic {} is too long!", mnemonic);
         }
         let bits = match mnemonic {
             "" => "000",
@@ -37,7 +37,7 @@ impl Code {
 
     pub fn jump(mnemonic: &str) -> String {
         if mnemonic.len() > 3 {
-            panic!("Mnemonic is too long!");
+            panic!("Mnemonic {} is too long!", mnemonic);
         }
         let bits = match mnemonic {
             "" => "000",
@@ -57,7 +57,7 @@ impl Code {
 
     pub fn comp(mnemonic: &str) -> String {
         if mnemonic.len() > 3 {
-            panic!("Mnemonic is too long!");
+            panic!("Mnemonic {} is too long!", mnemonic);
         }
         let bits = match mnemonic {
             "0" => "0101010",

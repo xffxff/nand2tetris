@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::io::SeekFrom;
 
 #[derive(Debug, PartialEq)]
 pub enum CommandType {
@@ -41,7 +42,11 @@ impl Parser {
             if len == 0 {
                 self.eof = true;
             }
-            self.current_command = self.current_command.trim().to_string();
+            let current_command = match self.current_command.find("//") {
+                Some(size) => &self.current_command[..size],
+                None => &self.current_command,
+            };
+            self.current_command = current_command.trim().to_string();
             if self.command_type() != CommandType::WhiteSpace {
                 break;
             }
@@ -111,5 +116,11 @@ impl Parser {
             }
         };
         symbol.to_string()
+    }
+
+    pub fn reset(&mut self) {
+        self.reader.seek(SeekFrom::Start(0));
+        self.current_command.clear();
+        self.eof = false;
     }
 }

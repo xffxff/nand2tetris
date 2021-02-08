@@ -22,12 +22,30 @@ impl Assembler {
     }
 
     pub fn run(&mut self) {
+        self.first_pass();
         self.second_pass();
+    }
+
+    fn first_pass(&mut self) {
+        let mut line_num = 0;
+        while self.parser.has_more_commands() {
+            self.parser.advance();
+            match self.parser.command_type() {
+                CommandType::ACommand => line_num += 1,
+                CommandType::CCommand => line_num += 1,
+                CommandType::LCommand => {
+                    let symbol = self.parser.symbol();
+                    self.symbol_table.add_entry(&symbol, line_num);
+                },
+                CommandType::WhiteSpace => {}
+            }
+        }
     }
 
     fn second_pass(&mut self) {
         let hack_filename = get_hack_filename(&self.filename);
         let mut hack_file = File::create(hack_filename).unwrap();
+        self.parser.reset();
         while self.parser.has_more_commands() {
             self.parser.advance();
             if self.parser.command_type() == CommandType::CCommand {
