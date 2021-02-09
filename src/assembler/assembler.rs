@@ -6,17 +6,17 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 pub struct Assembler {
-    filename: PathBuf,
+    path: PathBuf,
     symbol_table: SymbolTalbe,
     parser: Parser,
 }
 
 impl Assembler {
-    pub fn new(filename: &Path) -> Self {
-        let parser = Parser::new(filename);
+    pub fn new(path: &Path) -> Self {
+        let parser = Parser::new(path);
         let symbol_table = SymbolTalbe::new();
         Assembler {
-            filename: filename.to_path_buf(),
+            path: path.to_path_buf(),
             symbol_table,
             parser,
         }
@@ -44,8 +44,8 @@ impl Assembler {
     }
 
     fn second_pass(&mut self) {
-        let hack_filename = get_hack_filename(&self.filename);
-        let mut hack_file = File::create(hack_filename).unwrap();
+        let hack_path = get_hack_path(&self.path);
+        let mut hack_file = File::create(hack_path).unwrap();
         self.parser.reset();
         while self.parser.has_more_commands() {
             self.parser.advance();
@@ -69,8 +69,8 @@ impl Assembler {
     }
 }
 
-fn get_hack_filename(filename: &Path) -> PathBuf {
-    let mut path = filename.to_path_buf();
+fn get_hack_path(path: &Path) -> PathBuf {
+    let mut path = path.to_path_buf();
     path.set_extension("hack");
     path
 }

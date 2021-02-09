@@ -25,10 +25,6 @@ impl SymbolTalbe {
         alloc
     }
 
-    pub fn contains(&self, symbol: &str) -> bool {
-        self.table.contains_key(symbol)
-    }
-
     pub fn get_address(&self, symbol: &str) -> Option<&i16> {
         self.table.get(symbol)
     }

@@ -1,5 +1,5 @@
-use std::env;
 use nand2tetris_assember::assembler::Assembler;
+use std::env;
 use std::path::Path;
 
 fn main() {

@@ -3,7 +3,7 @@ use nand2tetris_assember::assembler::Assembler;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 fn compare_two_files(one: &Path, other: &Path) -> bool {
     let f = File::open(one).unwrap();
@@ -42,7 +42,10 @@ fn get_filename(name: &str) -> PathBuf {
 fn test_assembler(filename: &str) {
     let mut assembler = Assembler::new(&get_filename(filename));
     assembler.run();
-    assert!(compare_two_files(&get_filename(filename), &get_filename(filename)));
+    assert!(compare_two_files(
+        &get_filename(filename),
+        &get_filename(filename)
+    ));
 }
 
 #[test]
