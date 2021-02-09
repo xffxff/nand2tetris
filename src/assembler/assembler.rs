@@ -1,21 +1,22 @@
-use crate::code::Code;
-use crate::parser::{CommandType, Parser};
-use crate::table::SymbolTalbe;
+use super::code::Code;
+use super::parser::{CommandType, Parser};
+use super::table::SymbolTalbe;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::{Path, PathBuf};
 
 pub struct Assembler {
-    filename: String,
+    filename: PathBuf,
     symbol_table: SymbolTalbe,
     parser: Parser,
 }
 
 impl Assembler {
-    pub fn new(filename: &str) -> Self {
+    pub fn new(filename: &Path) -> Self {
         let parser = Parser::new(filename);
         let symbol_table = SymbolTalbe::new();
         Assembler {
-            filename: filename.to_string(),
+            filename: filename.to_path_buf(),
             symbol_table,
             parser,
         }
@@ -68,12 +69,8 @@ impl Assembler {
     }
 }
 
-fn get_hack_filename(filename: &str) -> String {
-    let filename = match filename.find('.') {
-        Some(size) => &filename[..size],
-        None => {
-            panic!("{} not a valid assembly file", filename);
-        }
-    };
-    format!("{}.hack", filename)
+fn get_hack_filename(filename: &Path) -> PathBuf {
+    let mut path = filename.to_path_buf();
+    path.set_extension("hack");
+    path
 }

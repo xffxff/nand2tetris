@@ -1,5 +1,6 @@
 use std::env;
 use nand2tetris_assember::assembler::Assembler;
+use std::path::Path;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -7,6 +8,7 @@ fn main() {
         panic!("too many or too few arguments, only one argument is required");
     }
 
-    let mut assembler = Assembler::new(&args[1]);
+    let path = Path::new(&args[1]);
+    let mut assembler = Assembler::new(path);
     assembler.run();
 }
