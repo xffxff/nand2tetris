@@ -5,8 +5,21 @@ use std::io::SeekFrom;
 use std::path::Path;
 
 #[derive(Debug, PartialEq)]
+pub enum Arithmetic {
+    Add,
+    Sub,
+    Neg,
+    Eq,
+    Gt,
+    Lt,
+    And,
+    Or,
+    Not
+}
+
+#[derive(Debug, PartialEq)]
 pub enum CommandType {
-    ARITHMETIC,
+    ARITHMETIC(Arithmetic),
     PUSH,
     POP,
     LABEL,
@@ -68,7 +81,7 @@ impl Parser {
         } else if self.current_command.starts_with("pop") {
             CommandType::POP
         } else {
-            CommandType::ARITHMETIC
+            CommandType::ARITHMETIC(Arithmetic::Add)
         }
     }
 
@@ -78,13 +91,13 @@ impl Parser {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[1]
             },
-            CommandType::ARITHMETIC => &self.current_command,
+            CommandType::ARITHMETIC(_) => &self.current_command,
             _ => ""
         };
         arg1.to_string()
     }
 
-    pub fn arg2(&self) -> String {
+    pub fn arg2(&self) -> i32 {
         let arg2 = match self.command_type() {
             CommandType::PUSH => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
@@ -92,7 +105,7 @@ impl Parser {
             },
             _ => ""
         };
-        arg2.to_string()
+        arg2.parse().unwrap()
     }
 
     pub fn reset(&mut self) {
