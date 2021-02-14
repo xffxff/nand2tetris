@@ -19,7 +19,7 @@ pub enum Arithmetic {
 
 #[derive(Debug, PartialEq)]
 pub enum CommandType {
-    ARITHMETIC(Arithmetic),
+    ARITHMETIC,
     PUSH,
     POP,
     LABEL,
@@ -81,20 +81,35 @@ impl Parser {
         } else if self.current_command.starts_with("pop") {
             CommandType::POP
         } else {
-            CommandType::ARITHMETIC(Arithmetic::Add)
+            CommandType::ARITHMETIC
         }
     }
 
-    pub fn arg1(&self) -> String {
+    pub fn arg1(&self) -> Arithmetic {
         let arg1 = match self.command_type() {
             CommandType::PUSH => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[1]
             },
-            CommandType::ARITHMETIC(_) => &self.current_command,
+            CommandType::ARITHMETIC => &self.current_command,
             _ => ""
         };
-        arg1.to_string()
+        Self::str2arithmetic(arg1)
+    }
+
+    fn str2arithmetic(s: &str) -> Arithmetic {
+        match s {
+            "add" => Arithmetic::Add,
+            "sub" => Arithmetic::Sub,
+            "neg" => Arithmetic::Neg,
+            "eq" => Arithmetic::Eq,
+            "gt" => Arithmetic::Gt,
+            "lt" => Arithmetic::Lt,
+            "and" => Arithmetic::And,
+            "or" => Arithmetic::Or,
+            "not" => Arithmetic::Not,
+            _ => panic!("not a valid arithmetic string")
+        }
     }
 
     pub fn arg2(&self) -> i32 {

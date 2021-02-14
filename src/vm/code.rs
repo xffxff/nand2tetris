@@ -16,18 +16,29 @@ pub enum Segment {
 }
 
 pub struct Code {
-    writer: BufWriter<File>
+    writer: BufWriter<File>,
+    lable_count: i32
 }
 
 impl Code {
     pub fn new(path: &Path) -> Self {
         let file = File::create(path).unwrap();
         let writer = BufWriter::new(file);
-        Code { writer }
+        Code { writer, lable_count: 0 }
     } 
 
     pub fn write_arithmetic(&mut self, command: Arithmetic) {
-        let res = Self::arithmetic(command);
+        let res = match command {
+            Arithmetic::Add => Self::add_sub("+"),
+            Arithmetic::Sub => Self::add_sub("-"),
+            Arithmetic::Neg => Self::neg(),
+            Arithmetic::Eq => self.compare("JEQ"),
+            Arithmetic::Lt => self.compare("JLT"),
+            Arithmetic::Gt => self.compare("JGT"),
+            Arithmetic::And => Self::and_or("&"),
+            Arithmetic::Or => Self::and_or("|"),
+            Arithmetic::Not => Self::not()
+        };
         for mut s in res {
             s.push_str("\r\n");
             self.writer.write_all(s.as_bytes()).unwrap();
@@ -35,19 +46,97 @@ impl Code {
         self.writer.flush().unwrap();
     }
 
-    fn arithmetic(command: Arithmetic) -> Vec<String> {
+    fn add_sub(cmd: &str) -> Vec<String> {
         let mut res = Vec::new();
         res.push("@SP");
+        res.push("M=M-1");    // SP--
+        res.push("@SP");
+        res.push("A=M");
+        res.push("D=M");      // D = *SP
+        res.push("@SP");
+        res.push("M=M-1");    // SP--
+        res.push("@SP");
+        res.push("A=M");
+        let asm = format!("D=M{}D", cmd);
+        res.push(&asm);       // D = *SP - D
+        res.push("M=D");      // *SP = D
+        res.push("@SP");
+        res.push("M=M+1");    // SP++
+        res.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn neg() -> Vec<String> {
+        let mut res = Vec::new();
+        res.push("@SP");      // SP--
         res.push("M=M-1");
         res.push("@SP");
+        res.push("A=M");
+        res.push("D=M");      // D = *SP
+        res.push("M=-D");     // *SP = -D
+        res.push("@SP");
+        res.push("M=M+1");
+        res.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn compare(&mut self, cmp: &str) -> Vec<String> {
+        let mut res = Vec::new();
+        res.push("@SP");
+        res.push("M=M-1");    // SP--
+        res.push("@SP");
+        res.push("A=M");
+        res.push("D=M");      // D = *SP
+        res.push("@SP");
+        res.push("M=M-1");    // SP--;
+
+        res.push("@SP");
+        res.push("A=M");
+        res.push("D=M-D");    // D = *SP - D
+        let label_value = format!("@EQ.{}", self.lable_count);
+        res.push(&label_value);
+        let cmp_asm = format!("D;{}", cmp);
+        res.push(&cmp_asm);    // jump EQ
+        res.push("@SP");
+        res.push("A=M");
+        res.push("M=0");      // *SP = 0
+        res.push("@SP");
+        res.push("M=M-1");
+
+        let label = format!("(EQ.{})", self.lable_count);
+        res.push(&label);     // *SP == -1 
+        res.push("@SP");
+        res.push("A=M");
+        res.push("M=-1");     
+        res.push("@SP");
+        res.push("M=M-1");
+        self.lable_count += 1;
+        res.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn and_or(cmd: &str) -> Vec<String> {
+        let mut res = Vec::new();
+        res.push("@SP");     // SP--
+        res.push("M=M-1");
+        res.push("@SP");     // D = *SP
         res.push("A=M");
         res.push("D=M");
-        res.push("@SP");
+        res.push("@SP");     // SP--
         res.push("M=M-1");
-        res.push("@SP");
+        res.push("@SP");     // *SP = *SP & D
         res.push("A=M");
-        res.push("D=M+D");
-        res.push("M=D");
+        let asm = format!("M=M{}D", cmd);
+        res.push(&asm);
+        res.push("@SP");
+        res.push("M=M+1");
+        res.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn not() -> Vec<String> {
+        let mut res = Vec::new();
+        res.push("@SP");     // SP--
+        res.push("M=M-1");
+        res.push("@SP");     // *SP = !*SP
+        res.push("A=M");
+        res.push("M=!M");
         res.push("@SP");
         res.push("M=M+1");
         res.iter().map(|s| s.to_string()).collect()
