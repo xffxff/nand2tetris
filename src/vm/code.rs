@@ -17,14 +17,14 @@ pub enum Segment {
 
 pub struct Code {
     writer: BufWriter<File>,
-    lable_count: i32
+    label_count: i32
 }
 
 impl Code {
     pub fn new(path: &Path) -> Self {
         let file = File::create(path).unwrap();
         let writer = BufWriter::new(file);
-        Code { writer, lable_count: 0 }
+        Code { writer, label_count: 0 }
     } 
 
     pub fn write_arithmetic(&mut self, command: Arithmetic) {
@@ -91,24 +91,28 @@ impl Code {
         res.push("@SP");
         res.push("A=M");
         res.push("D=M-D");    // D = *SP - D
-        let label_value = format!("@EQ.{}", self.lable_count);
-        res.push(&label_value);
+        let goto_label = format!("@EQ.{}", self.label_count);
+        res.push(&goto_label);
         let cmp_asm = format!("D;{}", cmp);
         res.push(&cmp_asm);    // jump EQ
         res.push("@SP");
         res.push("A=M");
         res.push("M=0");      // *SP = 0
-        res.push("@SP");
-        res.push("M=M-1");
+        let goto_end = format!("@END.{}", self.label_count);
+        res.push(&goto_end);
+        res.push("0;JMP");
 
-        let label = format!("(EQ.{})", self.lable_count);
+        let label = format!("(EQ.{})", self.label_count);
         res.push(&label);     // *SP == -1 
         res.push("@SP");
         res.push("A=M");
         res.push("M=-1");     
+
+        let end = format!("(END.{})", self.label_count);
+        res.push(&end);
         res.push("@SP");
-        res.push("M=M-1");
-        self.lable_count += 1;
+        res.push("M=M+1");
+        self.label_count += 1;
         res.iter().map(|s| s.to_string()).collect()
     }
 
