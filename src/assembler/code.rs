@@ -1,4 +1,4 @@
-use crate::table::SymbolTalbe;
+use super::table::SymbolTalbe;
 
 pub struct Code;
 

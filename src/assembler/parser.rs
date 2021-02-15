@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::SeekFrom;
+use std::path::Path;
 
 #[derive(Debug, PartialEq)]
 pub enum CommandType {
@@ -18,8 +19,8 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(filename: &str) -> Self {
-        let f = File::open(filename).unwrap();
+    pub fn new(path: &Path) -> Self {
+        let f = File::open(path).unwrap();
         let reader = BufReader::new(f);
         Parser {
             reader,
