@@ -190,7 +190,7 @@ impl Code {
                 let index = format!("@{}", index);
                 res.push(index);
                 res.push("D=A".to_string());
-            },
+            }
             Segment::Pointer => {
                 let segment = match index {
                     0 => Segment::This,
@@ -200,7 +200,7 @@ impl Code {
                 let index = format!("@{}", segment);
                 res.push(index);
                 res.push("D=M".to_string());
-            },
+            }
             Segment::Static => {
                 let index = format!("@{}.{}", self.filename, index);
                 res.push(index);
@@ -210,7 +210,7 @@ impl Code {
                 let index = format!("@{}", index + 5);
                 res.push(index);
                 res.push("D=M".to_string());
-            },
+            }
             _ => {
                 let segment_start = format!("@{}", segment);
                 res.push(segment_start); // addr = segment + i
@@ -250,7 +250,7 @@ impl Code {
                 res.push("@addr".to_string());
                 res.push("A=M".to_string());
                 res.push("M=D".to_string());
-            },
+            }
             Segment::Pointer => {
                 let segment = match index {
                     0 => Segment::This,
@@ -266,7 +266,7 @@ impl Code {
                 let seg = format!("@{}", segment);
                 res.push(seg);
                 res.push("M=D".to_string());
-            },
+            }
             Segment::Static => {
                 res.push("@SP".to_string()); // SP--
                 res.push("M=M-1".to_string());

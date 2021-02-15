@@ -1,15 +1,21 @@
 use nand2tetris_assember::vm::code::Code;
 use nand2tetris_assember::vm::parser::{CommandType, Parser};
-use std::path::Path;
+use std::env;
+use std::path::{Path, PathBuf};
 
 fn main() {
-    let path = Path::new("BasicTest.vm");
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        panic!("too many or too few arguments, only one argument is required");
+    }
+
+    let path = Path::new(&args[1]);
     let mut parser = Parser::new(path);
-    let path = Path::new("BasicTest.asm");
-    let mut code = Code::new(path);
+
+    let path = get_asm_path(path);
+    let mut code = Code::new(&path);
     while parser.has_more_commands() {
         parser.advance();
-        // println!("{} {}", parser.arg1(), parser.arg2());
         match parser.command_type() {
             CommandType::ARITHMETIC => {
                 let command = parser.arg1();
@@ -26,4 +32,10 @@ fn main() {
             _ => {}
         }
     }
+}
+
+fn get_asm_path(path: &Path) -> PathBuf {
+    let mut path = path.to_path_buf();
+    path.set_extension("asm");
+    path
 }
