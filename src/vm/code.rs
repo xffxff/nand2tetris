@@ -1,9 +1,9 @@
-use std::io::BufWriter;
-use std::io::prelude::*;
-use std::fs::File;
-use std::path::Path;
+use super::parser::{Arithmetic, CommandType};
 use std::fmt;
-use super::parser::{CommandType, Arithmetic};
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufWriter;
+use std::path::Path;
 
 pub enum Segment {
     Local,
@@ -12,7 +12,7 @@ pub enum Segment {
     That,
     Constant,
     Static,
-    Temp
+    Temp,
 }
 
 impl fmt::Display for Segment {
@@ -31,15 +31,18 @@ impl fmt::Display for Segment {
 
 pub struct Code {
     writer: BufWriter<File>,
-    label_count: i32
+    label_count: i32,
 }
 
 impl Code {
     pub fn new(path: &Path) -> Self {
         let file = File::create(path).unwrap();
         let writer = BufWriter::new(file);
-        Code { writer, label_count: 0 }
-    } 
+        Code {
+            writer,
+            label_count: 0,
+        }
+    }
 
     pub fn write_arithmetic(&mut self, command: &str) {
         let command = Self::str2arithmetic(command);
@@ -52,7 +55,7 @@ impl Code {
             Arithmetic::Gt => self.compare("JGT"),
             Arithmetic::And => Self::and_or("&"),
             Arithmetic::Or => Self::and_or("|"),
-            Arithmetic::Not => Self::not()
+            Arithmetic::Not => Self::not(),
         };
         for mut s in res {
             s.push_str("\r\n");
@@ -64,30 +67,30 @@ impl Code {
     fn add_sub(cmd: &str) -> Vec<String> {
         let mut res = Vec::new();
         res.push("@SP");
-        res.push("M=M-1");    // SP--
+        res.push("M=M-1"); // SP--
         res.push("@SP");
         res.push("A=M");
-        res.push("D=M");      // D = *SP
+        res.push("D=M"); // D = *SP
         res.push("@SP");
-        res.push("M=M-1");    // SP--
+        res.push("M=M-1"); // SP--
         res.push("@SP");
         res.push("A=M");
         let asm = format!("D=M{}D", cmd);
-        res.push(&asm);       // D = *SP - D
-        res.push("M=D");      // *SP = D
+        res.push(&asm); // D = *SP - D
+        res.push("M=D"); // *SP = D
         res.push("@SP");
-        res.push("M=M+1");    // SP++
+        res.push("M=M+1"); // SP++
         res.iter().map(|s| s.to_string()).collect()
     }
 
     fn neg() -> Vec<String> {
         let mut res = Vec::new();
-        res.push("@SP");      // SP--
+        res.push("@SP"); // SP--
         res.push("M=M-1");
         res.push("@SP");
         res.push("A=M");
-        res.push("D=M");      // D = *SP
-        res.push("M=-D");     // *SP = -D
+        res.push("D=M"); // D = *SP
+        res.push("M=-D"); // *SP = -D
         res.push("@SP");
         res.push("M=M+1");
         res.iter().map(|s| s.to_string()).collect()
@@ -96,32 +99,32 @@ impl Code {
     fn compare(&mut self, cmp: &str) -> Vec<String> {
         let mut res = Vec::new();
         res.push("@SP");
-        res.push("M=M-1");    // SP--
+        res.push("M=M-1"); // SP--
         res.push("@SP");
         res.push("A=M");
-        res.push("D=M");      // D = *SP
+        res.push("D=M"); // D = *SP
         res.push("@SP");
-        res.push("M=M-1");    // SP--;
+        res.push("M=M-1"); // SP--;
 
         res.push("@SP");
         res.push("A=M");
-        res.push("D=M-D");    // D = *SP - D
+        res.push("D=M-D"); // D = *SP - D
         let goto_label = format!("@EQ.{}", self.label_count);
         res.push(&goto_label);
         let cmp_asm = format!("D;{}", cmp);
-        res.push(&cmp_asm);    // jump EQ
+        res.push(&cmp_asm); // jump EQ
         res.push("@SP");
         res.push("A=M");
-        res.push("M=0");      // *SP = 0
+        res.push("M=0"); // *SP = 0
         let goto_end = format!("@END.{}", self.label_count);
         res.push(&goto_end);
         res.push("0;JMP");
 
         let label = format!("(EQ.{})", self.label_count);
-        res.push(&label);     // *SP == -1 
+        res.push(&label); // *SP == -1
         res.push("@SP");
         res.push("A=M");
-        res.push("M=-1");     
+        res.push("M=-1");
 
         let end = format!("(END.{})", self.label_count);
         res.push(&end);
@@ -133,14 +136,14 @@ impl Code {
 
     fn and_or(cmd: &str) -> Vec<String> {
         let mut res = Vec::new();
-        res.push("@SP");     // SP--
+        res.push("@SP"); // SP--
         res.push("M=M-1");
-        res.push("@SP");     // D = *SP
+        res.push("@SP"); // D = *SP
         res.push("A=M");
         res.push("D=M");
-        res.push("@SP");     // SP--
+        res.push("@SP"); // SP--
         res.push("M=M-1");
-        res.push("@SP");     // *SP = *SP & D
+        res.push("@SP"); // *SP = *SP & D
         res.push("A=M");
         let asm = format!("M=M{}D", cmd);
         res.push(&asm);
@@ -151,9 +154,9 @@ impl Code {
 
     fn not() -> Vec<String> {
         let mut res = Vec::new();
-        res.push("@SP");     // SP--
+        res.push("@SP"); // SP--
         res.push("M=M-1");
-        res.push("@SP");     // *SP = !*SP
+        res.push("@SP"); // *SP = !*SP
         res.push("A=M");
         res.push("M=!M");
         res.push("@SP");
@@ -182,7 +185,7 @@ impl Code {
                 let index = format!("@{}", index);
                 res.push(index);
                 res.push("D=A".to_string());
-            },
+            }
             Segment::Temp => {
                 let index = format!("@{}", index + 5);
                 res.push(index);
@@ -190,7 +193,7 @@ impl Code {
             }
             _ => {
                 let segment_start = format!("@{}", segment);
-                res.push(segment_start);   // addr = segment + i
+                res.push(segment_start); // addr = segment + i
                 res.push("D=M".to_string());
                 let index = format!("@{}", index);
                 res.push(index);
@@ -211,27 +214,27 @@ impl Code {
     fn pop(&mut self, segment: Segment, index: i32) -> Vec<String> {
         let mut res = Vec::new();
         match segment {
-            Segment::Temp => { 
+            Segment::Temp => {
                 let index = format!("@{}", index + 5);
                 res.push(index);
                 res.push("D=A".to_string());
-            },
+            }
             _ => {
                 let segment_start = format!("@{}", segment);
-                res.push(segment_start);   // addr = (segment + i)
+                res.push(segment_start); // addr = (segment + i)
                 res.push("D=M".to_string());
                 let index = format!("@{}", index);
                 res.push(index);
                 res.push("D=D+A".to_string());
             }
         };
-        res.push("@addr".to_string());            
+        res.push("@addr".to_string());
         res.push("M=D".to_string());
 
-        res.push("@SP".to_string());            // SP--
+        res.push("@SP".to_string()); // SP--
         res.push("M=M-1".to_string());
 
-        res.push("@SP".to_string());            // *addr = *SP
+        res.push("@SP".to_string()); // *addr = *SP
         res.push("A=M".to_string());
         res.push("D=M".to_string());
         res.push("@addr".to_string());
@@ -251,7 +254,7 @@ impl Code {
             "and" => Arithmetic::And,
             "or" => Arithmetic::Or,
             "not" => Arithmetic::Not,
-            _ => panic!("not a valid arithmetic string")
+            _ => panic!("not a valid arithmetic string"),
         }
     }
 
@@ -264,7 +267,7 @@ impl Code {
             "constant" => Segment::Constant,
             "static" => Segment::Static,
             "temp" => Segment::Temp,
-            _ => panic!("not a valid segment string")
+            _ => panic!("not a valid segment string"),
         }
     }
 }

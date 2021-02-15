@@ -14,7 +14,7 @@ pub enum Arithmetic {
     Lt,
     And,
     Or,
-    Not
+    Not,
 }
 
 #[derive(Debug, PartialEq)]
@@ -28,7 +28,7 @@ pub enum CommandType {
     FUNCTION,
     RETURN,
     CALL,
-    WHITESPACE
+    WHITESPACE,
 }
 
 pub struct Parser {
@@ -87,13 +87,12 @@ impl Parser {
 
     pub fn arg1(&self) -> String {
         let arg1 = match self.command_type() {
-            CommandType::POP |
-            CommandType::PUSH => {
+            CommandType::POP | CommandType::PUSH => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[1]
-            },
+            }
             CommandType::ARITHMETIC => &self.current_command,
-            _ => ""
+            _ => "",
         };
         arg1.to_string()
     }
@@ -103,8 +102,8 @@ impl Parser {
             CommandType::PUSH | CommandType::POP => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[2]
-            },
-            _ => panic!("{:?} command does not have arg2")
+            }
+            _ => panic!("{:?} command does not have arg2", self.command_type()),
         };
         arg2.parse().unwrap()
     }
