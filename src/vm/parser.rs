@@ -85,8 +85,9 @@ impl Parser {
         }
     }
 
-    pub fn arg1(&self) -> Arithmetic {
+    pub fn arg1(&self) -> String {
         let arg1 = match self.command_type() {
+            CommandType::POP |
             CommandType::PUSH => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[1]
@@ -94,31 +95,16 @@ impl Parser {
             CommandType::ARITHMETIC => &self.current_command,
             _ => ""
         };
-        Self::str2arithmetic(arg1)
-    }
-
-    fn str2arithmetic(s: &str) -> Arithmetic {
-        match s {
-            "add" => Arithmetic::Add,
-            "sub" => Arithmetic::Sub,
-            "neg" => Arithmetic::Neg,
-            "eq" => Arithmetic::Eq,
-            "gt" => Arithmetic::Gt,
-            "lt" => Arithmetic::Lt,
-            "and" => Arithmetic::And,
-            "or" => Arithmetic::Or,
-            "not" => Arithmetic::Not,
-            _ => panic!("not a valid arithmetic string")
-        }
+        arg1.to_string()
     }
 
     pub fn arg2(&self) -> i32 {
         let arg2 = match self.command_type() {
-            CommandType::PUSH => {
+            CommandType::PUSH | CommandType::POP => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[2]
             },
-            _ => ""
+            _ => panic!("{:?} command does not have arg2")
         };
         arg2.parse().unwrap()
     }

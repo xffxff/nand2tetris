@@ -2,6 +2,7 @@ use std::io::BufWriter;
 use std::io::prelude::*;
 use std::fs::File;
 use std::path::Path;
+use std::fmt;
 use super::parser::{CommandType, Arithmetic};
 
 pub enum Segment {
@@ -11,8 +12,21 @@ pub enum Segment {
     That,
     Constant,
     Static,
-    Temp,
-    Pointer
+    Temp
+}
+
+impl fmt::Display for Segment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Segment::Local => write!(f, "LCL"),
+            Segment::Argument => write!(f, "ARG"),
+            Segment::This => write!(f, "THIS"),
+            Segment::That => write!(f, "THAT"),
+            Segment::Constant => write!(f, "CONSTANT"),
+            Segment::Static => write!(f, "STATIC"),
+            Segment::Temp => write!(f, "TEMP"),
+        }
+    }
 }
 
 pub struct Code {
@@ -27,7 +41,8 @@ impl Code {
         Code { writer, label_count: 0 }
     } 
 
-    pub fn write_arithmetic(&mut self, command: Arithmetic) {
+    pub fn write_arithmetic(&mut self, command: &str) {
+        let command = Self::str2arithmetic(command);
         let res = match command {
             Arithmetic::Add => Self::add_sub("+"),
             Arithmetic::Sub => Self::add_sub("-"),
@@ -146,29 +161,110 @@ impl Code {
         res.iter().map(|s| s.to_string()).collect()
     }
 
-    pub fn write_push_pop(&mut self, command: CommandType, segment: Segment, index: i32) {
-        match command {
-            CommandType::PUSH => {
-                let res = Self::push(segment, index);
-                for mut s in res {
-                    s.push_str("\r\n");
-                    self.writer.write_all(s.as_bytes()).unwrap();
-                }
-            },
-            _ => {}
+    pub fn write_push_pop(&mut self, command: CommandType, segment: &str, index: i32) {
+        let segment = Self::str2segment(segment);
+        let res = match command {
+            CommandType::PUSH => Self::push(segment, index),
+            CommandType::POP => self.pop(segment, index),
+            _ => panic!("Invalid command, must be one of PUSH or POP!"),
+        };
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
         }
         self.writer.flush().unwrap();
     }
 
     fn push(segment: Segment, index: i32) -> Vec<String> {
         let mut res = Vec::new();
-        res.push(format!("@{}", index));
-        res.push("D=A".to_string());
+        match segment {
+            Segment::Constant => {
+                let index = format!("@{}", index);
+                res.push(index);
+                res.push("D=A".to_string());
+            },
+            Segment::Temp => {
+                let index = format!("@{}", index + 5);
+                res.push(index);
+                res.push("D=M".to_string());
+            }
+            _ => {
+                let segment_start = format!("@{}", segment);
+                res.push(segment_start);   // addr = segment + i
+                res.push("D=M".to_string());
+                let index = format!("@{}", index);
+                res.push(index);
+                res.push("D=D+A".to_string());
+                res.push("A=D".to_string());
+                res.push("D=M".to_string());
+            }
+        }
         res.push("@SP".to_string());
         res.push("A=M".to_string());
         res.push("M=D".to_string());
+
         res.push("@SP".to_string());
         res.push("M=M+1".to_string());
         res
+    }
+
+    fn pop(&mut self, segment: Segment, index: i32) -> Vec<String> {
+        let mut res = Vec::new();
+        match segment {
+            Segment::Temp => { 
+                let index = format!("@{}", index + 5);
+                res.push(index);
+                res.push("D=A".to_string());
+            },
+            _ => {
+                let segment_start = format!("@{}", segment);
+                res.push(segment_start);   // addr = (segment + i)
+                res.push("D=M".to_string());
+                let index = format!("@{}", index);
+                res.push(index);
+                res.push("D=D+A".to_string());
+            }
+        };
+        res.push("@addr".to_string());            
+        res.push("M=D".to_string());
+
+        res.push("@SP".to_string());            // SP--
+        res.push("M=M-1".to_string());
+
+        res.push("@SP".to_string());            // *addr = *SP
+        res.push("A=M".to_string());
+        res.push("D=M".to_string());
+        res.push("@addr".to_string());
+        res.push("A=M".to_string());
+        res.push("M=D".to_string());
+        res
+    }
+
+    fn str2arithmetic(s: &str) -> Arithmetic {
+        match s {
+            "add" => Arithmetic::Add,
+            "sub" => Arithmetic::Sub,
+            "neg" => Arithmetic::Neg,
+            "eq" => Arithmetic::Eq,
+            "gt" => Arithmetic::Gt,
+            "lt" => Arithmetic::Lt,
+            "and" => Arithmetic::And,
+            "or" => Arithmetic::Or,
+            "not" => Arithmetic::Not,
+            _ => panic!("not a valid arithmetic string")
+        }
+    }
+
+    fn str2segment(s: &str) -> Segment {
+        match s {
+            "local" => Segment::Local,
+            "argument" => Segment::Argument,
+            "this" => Segment::This,
+            "that" => Segment::That,
+            "constant" => Segment::Constant,
+            "static" => Segment::Static,
+            "temp" => Segment::Temp,
+            _ => panic!("not a valid segment string")
+        }
     }
 }
