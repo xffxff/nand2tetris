@@ -33,15 +33,18 @@ impl fmt::Display for Segment {
 
 pub struct Code {
     writer: BufWriter<File>,
+    filename: String,
     label_count: i32,
 }
 
 impl Code {
     pub fn new(path: &Path) -> Self {
+        let filename = path.file_stem().unwrap().to_string_lossy().to_string();
         let file = File::create(path).unwrap();
         let writer = BufWriter::new(file);
         Code {
             writer,
+            filename,
             label_count: 0,
         }
     }
@@ -169,7 +172,7 @@ impl Code {
     pub fn write_push_pop(&mut self, command: CommandType, segment: &str, index: i32) {
         let segment = Self::str2segment(segment);
         let res = match command {
-            CommandType::PUSH => Self::push(segment, index),
+            CommandType::PUSH => self.push(segment, index),
             CommandType::POP => self.pop(segment, index),
             _ => panic!("Invalid command, must be one of PUSH or POP!"),
         };
@@ -180,7 +183,7 @@ impl Code {
         self.writer.flush().unwrap();
     }
 
-    fn push(segment: Segment, index: i32) -> Vec<String> {
+    fn push(&self, segment: Segment, index: i32) -> Vec<String> {
         let mut res = Vec::new();
         match segment {
             Segment::Constant => {
@@ -195,6 +198,11 @@ impl Code {
                     _ => panic!("Not a valid index, must be 0 or 1 for Pointer"),
                 };
                 let index = format!("@{}", segment);
+                res.push(index);
+                res.push("D=M".to_string());
+            },
+            Segment::Static => {
+                let index = format!("@{}.{}", self.filename, index);
                 res.push(index);
                 res.push("D=M".to_string());
             }
@@ -242,7 +250,6 @@ impl Code {
                 res.push("@addr".to_string());
                 res.push("A=M".to_string());
                 res.push("M=D".to_string());
-
             },
             Segment::Pointer => {
                 let segment = match index {
@@ -260,6 +267,17 @@ impl Code {
                 res.push(seg);
                 res.push("M=D".to_string());
             },
+            Segment::Static => {
+                res.push("@SP".to_string()); // SP--
+                res.push("M=M-1".to_string());
+
+                res.push("@SP".to_string()); // *filename.i = *SP
+                res.push("A=M".to_string());
+                res.push("D=M".to_string());
+                let index = format!("@{}.{}", self.filename, index);
+                res.push(index);
+                res.push("M=D".to_string());
+            }
             _ => {
                 let segment_start = format!("@{}", segment);
                 res.push(segment_start); // addr = (segment + i)
