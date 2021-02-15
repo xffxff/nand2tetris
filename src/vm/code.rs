@@ -13,6 +13,7 @@ pub enum Segment {
     Constant,
     Static,
     Temp,
+    Pointer,
 }
 
 impl fmt::Display for Segment {
@@ -25,6 +26,7 @@ impl fmt::Display for Segment {
             Segment::Constant => write!(f, "CONSTANT"),
             Segment::Static => write!(f, "STATIC"),
             Segment::Temp => write!(f, "TEMP"),
+            Segment::Pointer => write!(f, "POINTER"),
         }
     }
 }
@@ -185,12 +187,22 @@ impl Code {
                 let index = format!("@{}", index);
                 res.push(index);
                 res.push("D=A".to_string());
+            },
+            Segment::Pointer => {
+                let segment = match index {
+                    0 => Segment::This,
+                    1 => Segment::That,
+                    _ => panic!("Not a valid index, must be 0 or 1 for Pointer"),
+                };
+                let index = format!("@{}", segment);
+                res.push(index);
+                res.push("D=M".to_string());
             }
             Segment::Temp => {
                 let index = format!("@{}", index + 5);
                 res.push(index);
                 res.push("D=M".to_string());
-            }
+            },
             _ => {
                 let segment_start = format!("@{}", segment);
                 res.push(segment_start); // addr = segment + i
@@ -216,9 +228,38 @@ impl Code {
         match segment {
             Segment::Temp => {
                 let index = format!("@{}", index + 5);
-                res.push(index);
+                res.push(index); // addr = 5 + i
                 res.push("D=A".to_string());
-            }
+                res.push("@addr".to_string());
+                res.push("M=D".to_string());
+
+                res.push("@SP".to_string()); // SP--
+                res.push("M=M-1".to_string());
+
+                res.push("@SP".to_string()); // *addr = *SP
+                res.push("A=M".to_string());
+                res.push("D=M".to_string());
+                res.push("@addr".to_string());
+                res.push("A=M".to_string());
+                res.push("M=D".to_string());
+
+            },
+            Segment::Pointer => {
+                let segment = match index {
+                    0 => Segment::This,
+                    1 => Segment::That,
+                    _ => panic!("Not a valid index, must be 0 or 1 for Pointer"),
+                };
+                res.push("@SP".to_string()); // SP--
+                res.push("M=M-1".to_string());
+
+                res.push("@SP".to_string()); // THIS = *SP
+                res.push("A=M".to_string());
+                res.push("D=M".to_string());
+                let seg = format!("@{}", segment);
+                res.push(seg);
+                res.push("M=D".to_string());
+            },
             _ => {
                 let segment_start = format!("@{}", segment);
                 res.push(segment_start); // addr = (segment + i)
@@ -226,20 +267,20 @@ impl Code {
                 let index = format!("@{}", index);
                 res.push(index);
                 res.push("D=D+A".to_string());
+                res.push("@addr".to_string());
+                res.push("M=D".to_string());
+
+                res.push("@SP".to_string()); // SP--
+                res.push("M=M-1".to_string());
+
+                res.push("@SP".to_string()); // *addr = *SP
+                res.push("A=M".to_string());
+                res.push("D=M".to_string());
+                res.push("@addr".to_string());
+                res.push("A=M".to_string());
+                res.push("M=D".to_string());
             }
         };
-        res.push("@addr".to_string());
-        res.push("M=D".to_string());
-
-        res.push("@SP".to_string()); // SP--
-        res.push("M=M-1".to_string());
-
-        res.push("@SP".to_string()); // *addr = *SP
-        res.push("A=M".to_string());
-        res.push("D=M".to_string());
-        res.push("@addr".to_string());
-        res.push("A=M".to_string());
-        res.push("M=D".to_string());
         res
     }
 
@@ -267,6 +308,7 @@ impl Code {
             "constant" => Segment::Constant,
             "static" => Segment::Static,
             "temp" => Segment::Temp,
+            "pointer" => Segment::Pointer,
             _ => panic!("not a valid segment string"),
         }
     }
