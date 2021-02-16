@@ -302,6 +302,30 @@ impl Code {
         res
     }
 
+    pub fn write_label(&mut self, label: &str) {
+        let label = format!("({})\r\n", label);
+        self.writer.write_all(label.as_bytes()).unwrap();
+        self.writer.flush().unwrap();
+    }
+
+    pub fn write_if(&mut self, label: &str) {
+        let mut res = Vec::new();
+        res.push("@SP"); // SP--
+        res.push("M=M-1");
+        res.push("@SP"); // if *SP != 0; JUMP
+        res.push("A=M");
+        res.push("D=M");
+        let label = format!("@{}", label);
+        res.push(&label);
+        res.push("D;JNE");
+        
+        for s in res {
+            let s = format!("{}\r\n", s);
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
     fn str2arithmetic(s: &str) -> Arithmetic {
         match s {
             "add" => Arithmetic::Add,

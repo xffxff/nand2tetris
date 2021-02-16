@@ -29,6 +29,14 @@ fn main() {
                 let segment = parser.arg1();
                 code.write_push_pop(CommandType::POP, &segment, parser.arg2());
             }
+            CommandType::LABEL => {
+                let label = parser.arg1();
+                code.write_label(&label);
+            }
+            CommandType::IF => {
+                let label = parser.arg1();
+                code.write_if(&label);
+            }
             _ => {}
         }
     }
