@@ -41,6 +41,12 @@ fn main() {
                 let label = parser.arg1();
                 code.write_goto(&label);
             }
+            CommandType::FUNCTION => {
+                code.write_function(&parser.arg1(), parser.arg2());
+            }
+            CommandType::RETURN => {
+                code.write_return();
+            }
             _ => {}
         }
     }

@@ -333,6 +333,73 @@ impl Code {
         self.writer.flush().unwrap();
     }
 
+    pub fn write_function(&mut self, function_name: &str, num_vars: i32) {
+        let mut res = Vec::new();
+        let label = format!("({})", function_name);
+        res.push(label);
+        for i in 0..num_vars {
+            res.extend(self.push(Segment::Constant, 0));
+            res.extend(self.pop(Segment::Local, i));
+        }
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    pub fn write_return(&mut self) {
+        let mut res = Vec::new();
+        res.push("@LCL".to_string()); // end_frame = LCL
+        res.push("D=M".to_string());
+        res.push("@end_frame".to_string());
+        res.push("M=D".to_string());
+        res.push("@5".to_string());
+        res.push("A=D-A".to_string()); // ret_addr = *(end_frame - 5)
+        res.push("D=M".to_string());
+        res.push("@ret_addr".to_string());
+        res.push("M=D".to_string());
+        res.extend(self.pop(Segment::Argument, 0)); // *ARG = pop()
+        res.push("@ARG".to_string()); // SP = ARG + 1
+        res.push("D=M".to_string());
+        res.push("@SP".to_string());
+        res.push("M=D+1".to_string());
+        res.push("@end_frame".to_string()); // THAT = *(end_frame - 1);
+        res.push("A=M-1".to_string());
+        res.push("D=M".to_string());
+        res.push("@THAT".to_string());
+        res.push("M=D".to_string());
+        res.push("@2".to_string()); // THIS = *(end_frame - 2);
+        res.push("D=A".to_string());
+        res.push("@end_frame".to_string());
+        res.push("A=M-D".to_string());
+        res.push("D=M".to_string());
+        res.push("@THIS".to_string());
+        res.push("M=D".to_string());
+        res.push("@3".to_string()); // ARG = *(end_frame - 3);
+        res.push("D=A".to_string());
+        res.push("@end_frame".to_string());
+        res.push("A=M-D".to_string());
+        res.push("D=M".to_string());
+        res.push("@ARG".to_string());
+        res.push("M=D".to_string());
+        res.push("@4".to_string()); // LCL = *(end_frame - 4);
+        res.push("D=A".to_string());
+        res.push("@end_frame".to_string());
+        res.push("A=M-D".to_string());
+        res.push("D=M".to_string());
+        res.push("@LCL".to_string());
+        res.push("M=D".to_string());
+        res.push("@ret_addr".to_string());
+        res.push("A=M".to_string());
+        res.push("0;JMP".to_string());
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
     fn str2arithmetic(s: &str) -> Arithmetic {
         match s {
             "add" => Arithmetic::Add,
@@ -344,7 +411,7 @@ impl Code {
             "and" => Arithmetic::And,
             "or" => Arithmetic::Or,
             "not" => Arithmetic::Not,
-            _ => panic!("not a valid arithmetic string"),
+            _ => panic!("{} is not a valid arithmetic string", s),
         }
     }
 

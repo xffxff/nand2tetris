@@ -86,6 +86,10 @@ impl Parser {
             CommandType::GOTO
         } else if self.current_command.starts_with("if-goto") {
             CommandType::IF
+        } else if self.current_command.starts_with("function") {
+            CommandType::FUNCTION
+        } else if self.current_command.starts_with("return") {
+            CommandType::RETURN
         } else {
             CommandType::ARITHMETIC
         }
@@ -104,7 +108,7 @@ impl Parser {
 
     pub fn arg2(&self) -> i32 {
         let arg2 = match self.command_type() {
-            CommandType::PUSH | CommandType::POP => {
+            CommandType::PUSH | CommandType::POP | CommandType::FUNCTION => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[2]
             }
