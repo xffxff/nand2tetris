@@ -326,6 +326,13 @@ impl Code {
         self.writer.flush().unwrap();
     }
 
+    pub fn write_goto(&mut self, label: &str) {
+        let label = format!("@{}\r\n", label);
+        self.writer.write_all(label.as_bytes()).unwrap();
+        self.writer.write_all("0;JMP\r\n".as_bytes()).unwrap();
+        self.writer.flush().unwrap();
+    }
+
     fn str2arithmetic(s: &str) -> Arithmetic {
         match s {
             "add" => Arithmetic::Add,

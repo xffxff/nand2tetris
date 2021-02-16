@@ -37,6 +37,10 @@ fn main() {
                 let label = parser.arg1();
                 code.write_if(&label);
             }
+            CommandType::GOTO => {
+                let label = parser.arg1();
+                code.write_goto(&label);
+            }
             _ => {}
         }
     }
