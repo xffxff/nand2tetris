@@ -90,6 +90,8 @@ impl Parser {
             CommandType::FUNCTION
         } else if self.current_command.starts_with("return") {
             CommandType::RETURN
+        } else if self.current_command.starts_with("call") {
+            CommandType::CALL
         } else {
             CommandType::ARITHMETIC
         }
@@ -108,7 +110,7 @@ impl Parser {
 
     pub fn arg2(&self) -> i32 {
         let arg2 = match self.command_type() {
-            CommandType::PUSH | CommandType::POP | CommandType::FUNCTION => {
+            CommandType::PUSH | CommandType::POP | CommandType::FUNCTION | CommandType::CALL => {
                 let v: Vec<&str> = self.current_command.split(' ').collect();
                 v[2]
             }

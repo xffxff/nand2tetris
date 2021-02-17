@@ -337,9 +337,8 @@ impl Code {
         let mut res = Vec::new();
         let label = format!("({})", function_name);
         res.push(label);
-        for i in 0..num_vars {
+        for _ in 0..num_vars {
             res.extend(self.push(Segment::Constant, 0));
-            res.extend(self.pop(Segment::Local, i));
         }
         for mut s in res {
             s.push_str("\r\n");
@@ -398,6 +397,55 @@ impl Code {
             self.writer.write_all(s.as_bytes()).unwrap();
         }
         self.writer.flush().unwrap();
+    }
+
+    pub fn write_call(&mut self, function_name: &str, num_args: i32) {
+        let mut res = Vec::new();
+        let ret_addr_label = format!("{}$ret", function_name);
+        res.push(format!("@{}", ret_addr_label)); // push retAddrLabel
+        res.push("D=A".to_string());
+        res.push("@SP".to_string());
+        res.push("A=M".to_string());
+        res.push("M=D".to_string());
+        res.push("@SP".to_string());
+        res.push("M=M+1".to_string());
+        res.extend(Self::push_segment(Segment::Local)); // push LCL
+        res.extend(Self::push_segment(Segment::Argument)); // push ARG
+        res.extend(Self::push_segment(Segment::This)); // push THIS
+        res.extend(Self::push_segment(Segment::That)); // push THAT
+        res.push("@5".to_string()); // ARG = SP - 5 - num_args
+        res.push("D=A".to_string());
+        res.push("@SP".to_string());
+        res.push("D=M-D".to_string());
+        res.push(format!("@{}", num_args));
+        res.push("D=D-A".to_string());
+        res.push("@ARG".to_string());
+        res.push("M=D".to_string());
+        res.push("@SP".to_string()); // LCL = SP
+        res.push("D=M".to_string());
+        res.push("@LCL".to_string());
+        res.push("M=D".to_string());
+        res.push(format!("@{}", function_name)); // goto function_name
+        res.push("0;JMP".to_string());
+        res.push(format!("({})", ret_addr_label)); 
+
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    fn push_segment(segment: Segment) -> Vec<String> {
+        let mut res = Vec::new();
+        res.push(format!("@{}", segment));
+        res.push("D=M".to_string());
+        res.push("@SP".to_string());
+        res.push("A=M".to_string());
+        res.push("M=D".to_string());
+        res.push("@SP".to_string());
+        res.push("M=M+1".to_string());
+        res
     }
 
     fn str2arithmetic(s: &str) -> Arithmetic {

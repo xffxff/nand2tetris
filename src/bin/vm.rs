@@ -47,6 +47,9 @@ fn main() {
             CommandType::RETURN => {
                 code.write_return();
             }
+            CommandType::CALL => {
+                code.write_call(&parser.arg1(), parser.arg2());
+            }
             _ => {}
         }
     }
