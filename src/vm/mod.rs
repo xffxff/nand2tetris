@@ -4,6 +4,9 @@ pub mod parser;
 use std::path::{Path, PathBuf};
 use code::Code;
 use parser::{Parser, CommandType};
+use std::fs;
+use std::io;
+use std::ffi::OsStr;
 
 pub struct VM {
     code: code::Code,
@@ -21,7 +24,13 @@ impl VM {
                 VM { code, files }
             }
             false => {
-                panic!("not a valid path");
+                let files = fs::read_dir(path).unwrap()
+                    .map(|res| res.map(|e| e.path()))
+                    .collect::<Result<Vec<_>, io::Error>>().unwrap();
+                let files = files.into_iter().filter(|x| x.extension() == Some(OsStr::new("vm"))).collect();
+                let path = get_asm_path(path);
+                let code = Code::new(&path);
+                VM { code, files }                
             }
         }
     }
