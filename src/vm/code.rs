@@ -320,7 +320,7 @@ impl Code {
         let label = format!("@{}", label);
         res.push(&label);
         res.push("D;JNE");
-        
+
         for s in res {
             let s = format!("{}\r\n", s);
             self.writer.write_all(s.as_bytes()).unwrap();
@@ -331,7 +331,7 @@ impl Code {
     pub fn write_goto(&mut self, label: &str) {
         let label = format!("@{}\r\n", label);
         self.writer.write_all(label.as_bytes()).unwrap();
-        self.writer.write_all("0;JMP\r\n".as_bytes()).unwrap();
+        self.writer.write_all(b"0;JMP\r\n").unwrap();
         self.writer.flush().unwrap();
     }
 
@@ -439,7 +439,7 @@ impl Code {
         res.push("M=D".to_string());
         res.push(format!("@{}", function_name)); // goto function_name
         res.push("0;JMP".to_string());
-        res.push(format!("({})", ret_addr_label)); 
+        res.push(format!("({})", ret_addr_label));
         res
     }
 

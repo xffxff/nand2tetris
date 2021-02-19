@@ -1,6 +1,6 @@
+use nand2tetris_assember::vm::VM;
 use std::env;
 use std::path::Path;
-use nand2tetris_assember::vm::VM;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

@@ -1,36 +1,41 @@
 pub mod code;
 pub mod parser;
 
-use std::path::{Path, PathBuf};
 use code::Code;
-use parser::{Parser, CommandType};
+use parser::{CommandType, Parser};
+use std::ffi::OsStr;
 use std::fs;
 use std::io;
-use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 
 pub struct VM {
     code: code::Code,
-    files: Vec<PathBuf>
+    files: Vec<PathBuf>,
 }
 
 impl VM {
     pub fn new(path: &Path) -> Self {
         match path.is_file() {
             true => {
-                let mut files = Vec::new(); 
+                let mut files = Vec::new();
                 files.push(path.to_path_buf());
                 let path = get_asm_path(path);
                 let code = Code::new(&path);
                 VM { code, files }
             }
             false => {
-                let files = fs::read_dir(path).unwrap()
+                let files = fs::read_dir(path)
+                    .unwrap()
                     .map(|res| res.map(|e| e.path()))
-                    .collect::<Result<Vec<_>, io::Error>>().unwrap();
-                let files = files.into_iter().filter(|x| x.extension() == Some(OsStr::new("vm"))).collect();
+                    .collect::<Result<Vec<_>, io::Error>>()
+                    .unwrap();
+                let files = files
+                    .into_iter()
+                    .filter(|x| x.extension() == Some(OsStr::new("vm")))
+                    .collect();
                 let path = get_asm_path(path);
                 let code = Code::new(&path);
-                VM { code, files }                
+                VM { code, files }
             }
         }
     }
@@ -55,11 +60,13 @@ impl VM {
                 }
                 CommandType::PUSH => {
                     let segment = parser.arg1();
-                    self.code.write_push_pop(CommandType::PUSH, &segment, parser.arg2());
+                    self.code
+                        .write_push_pop(CommandType::PUSH, &segment, parser.arg2());
                 }
                 CommandType::POP => {
                     let segment = parser.arg1();
-                    self.code.write_push_pop(CommandType::POP, &segment, parser.arg2());
+                    self.code
+                        .write_push_pop(CommandType::POP, &segment, parser.arg2());
                 }
                 CommandType::LABEL => {
                     let label = parser.arg1();
@@ -86,7 +93,6 @@ impl VM {
             }
         }
     }
-
 }
 
 fn get_asm_path(path: &Path) -> PathBuf {
