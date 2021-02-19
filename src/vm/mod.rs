@@ -38,6 +38,8 @@ impl VM {
     pub fn translate(&mut self) {
         self.code.write_init();
         for file in self.files.clone() {
+            let filename = file.file_name().unwrap().to_string_lossy().to_string();
+            self.code.set_filename(&filename);
             self.translate_one_file(&file)
         }
     }

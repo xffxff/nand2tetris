@@ -40,12 +40,12 @@ pub struct Code {
 
 impl Code {
     pub fn new(path: &Path) -> Self {
-        let filename = path.file_stem().unwrap().to_string_lossy().to_string();
+        // let filename = path.file_stem().unwrap().to_string_lossy().to_string();
         let file = File::create(path).unwrap();
         let writer = BufWriter::new(file);
         Code {
             writer,
-            filename,
+            filename: String::new(),
             label_count: 0,
             call_count: 0,
         }
@@ -468,6 +468,10 @@ impl Code {
             self.writer.write(s.as_bytes()).unwrap();
         }
         self.writer.flush().unwrap();
+    }
+
+    pub fn set_filename(&mut self, filename: &str) {
+        self.filename = filename.to_string();
     }
 
     fn str2arithmetic(s: &str) -> Arithmetic {
