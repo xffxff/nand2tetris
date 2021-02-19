@@ -35,17 +35,19 @@ pub struct Code {
     writer: BufWriter<File>,
     filename: String,
     label_count: i32,
+    call_count: i32,
 }
 
 impl Code {
     pub fn new(path: &Path) -> Self {
-        let filename = path.file_stem().unwrap().to_string_lossy().to_string();
+        // let filename = path.file_stem().unwrap().to_string_lossy().to_string();
         let file = File::create(path).unwrap();
         let writer = BufWriter::new(file);
         Code {
             writer,
-            filename,
+            filename: String::new(),
             label_count: 0,
+            call_count: 0,
         }
     }
 
@@ -302,6 +304,176 @@ impl Code {
         res
     }
 
+    pub fn write_label(&mut self, label: &str) {
+        let label = format!("({})\r\n", label);
+        self.writer.write_all(label.as_bytes()).unwrap();
+        self.writer.flush().unwrap();
+    }
+
+    pub fn write_if(&mut self, label: &str) {
+        let mut res = Vec::new();
+        res.push("@SP"); // SP--
+        res.push("M=M-1");
+        res.push("@SP"); // if *SP != 0; JUMP
+        res.push("A=M");
+        res.push("D=M");
+        let label = format!("@{}", label);
+        res.push(&label);
+        res.push("D;JNE");
+
+        for s in res {
+            let s = format!("{}\r\n", s);
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    pub fn write_goto(&mut self, label: &str) {
+        let label = format!("@{}\r\n", label);
+        self.writer.write_all(label.as_bytes()).unwrap();
+        self.writer.write_all(b"0;JMP\r\n").unwrap();
+        self.writer.flush().unwrap();
+    }
+
+    pub fn write_function(&mut self, function_name: &str, num_vars: i32) {
+        let mut res = Vec::new();
+        let label = format!("({})", function_name);
+        res.push(label);
+        for _ in 0..num_vars {
+            res.extend(self.push(Segment::Constant, 0));
+        }
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    pub fn write_return(&mut self) {
+        let mut res = Vec::new();
+        res.push("@LCL".to_string()); // end_frame = LCL
+        res.push("D=M".to_string());
+        res.push("@end_frame".to_string());
+        res.push("M=D".to_string());
+        res.push("@5".to_string());
+        res.push("A=D-A".to_string()); // ret_addr = *(end_frame - 5)
+        res.push("D=M".to_string());
+        res.push("@ret_addr".to_string());
+        res.push("M=D".to_string());
+        res.extend(self.pop(Segment::Argument, 0)); // *ARG = pop()
+        res.push("@ARG".to_string()); // SP = ARG + 1
+        res.push("D=M".to_string());
+        res.push("@SP".to_string());
+        res.push("M=D+1".to_string());
+        res.push("@end_frame".to_string()); // THAT = *(end_frame - 1);
+        res.push("A=M-1".to_string());
+        res.push("D=M".to_string());
+        res.push("@THAT".to_string());
+        res.push("M=D".to_string());
+        res.push("@2".to_string()); // THIS = *(end_frame - 2);
+        res.push("D=A".to_string());
+        res.push("@end_frame".to_string());
+        res.push("A=M-D".to_string());
+        res.push("D=M".to_string());
+        res.push("@THIS".to_string());
+        res.push("M=D".to_string());
+        res.push("@3".to_string()); // ARG = *(end_frame - 3);
+        res.push("D=A".to_string());
+        res.push("@end_frame".to_string());
+        res.push("A=M-D".to_string());
+        res.push("D=M".to_string());
+        res.push("@ARG".to_string());
+        res.push("M=D".to_string());
+        res.push("@4".to_string()); // LCL = *(end_frame - 4);
+        res.push("D=A".to_string());
+        res.push("@end_frame".to_string());
+        res.push("A=M-D".to_string());
+        res.push("D=M".to_string());
+        res.push("@LCL".to_string());
+        res.push("M=D".to_string());
+        res.push("@ret_addr".to_string());
+        res.push("A=M".to_string());
+        res.push("0;JMP".to_string());
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    pub fn write_call(&mut self, function_name: &str, num_args: i32) {
+        let res = self.call(function_name, num_args);
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    fn call(&mut self, function_name: &str, num_args: i32) -> Vec<String> {
+        let mut res = Vec::new();
+        let ret_addr_label = format!("{}$ret.{}", function_name, self.call_count);
+        self.call_count += 1;
+        res.push(format!("@{}", ret_addr_label)); // push retAddrLabel
+        res.push("D=A".to_string());
+        res.push("@SP".to_string());
+        res.push("A=M".to_string());
+        res.push("M=D".to_string());
+        res.push("@SP".to_string());
+        res.push("M=M+1".to_string());
+        res.extend(Self::push_segment(Segment::Local)); // push LCL
+        res.extend(Self::push_segment(Segment::Argument)); // push ARG
+        res.extend(Self::push_segment(Segment::This)); // push THIS
+        res.extend(Self::push_segment(Segment::That)); // push THAT
+        res.push("@5".to_string()); // ARG = SP - 5 - num_args
+        res.push("D=A".to_string());
+        res.push("@SP".to_string());
+        res.push("D=M-D".to_string());
+        res.push(format!("@{}", num_args));
+        res.push("D=D-A".to_string());
+        res.push("@ARG".to_string());
+        res.push("M=D".to_string());
+        res.push("@SP".to_string()); // LCL = SP
+        res.push("D=M".to_string());
+        res.push("@LCL".to_string());
+        res.push("M=D".to_string());
+        res.push(format!("@{}", function_name)); // goto function_name
+        res.push("0;JMP".to_string());
+        res.push(format!("({})", ret_addr_label));
+        res
+    }
+
+    fn push_segment(segment: Segment) -> Vec<String> {
+        let mut res = Vec::new();
+        res.push(format!("@{}", segment));
+        res.push("D=M".to_string());
+        res.push("@SP".to_string());
+        res.push("A=M".to_string());
+        res.push("M=D".to_string());
+        res.push("@SP".to_string());
+        res.push("M=M+1".to_string());
+        res
+    }
+
+    pub fn write_init(&mut self) {
+        let mut res = Vec::new();
+        res.push("@256".to_string());
+        res.push("D=A".to_string());
+        res.push("@SP".to_string());
+        res.push("M=D".to_string());
+        res.extend(self.call("Sys.init", 0));
+
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    pub fn set_filename(&mut self, filename: &str) {
+        self.filename = filename.to_string();
+    }
+
     fn str2arithmetic(s: &str) -> Arithmetic {
         match s {
             "add" => Arithmetic::Add,
@@ -313,7 +485,7 @@ impl Code {
             "and" => Arithmetic::And,
             "or" => Arithmetic::Or,
             "not" => Arithmetic::Not,
-            _ => panic!("not a valid arithmetic string"),
+            _ => panic!("{} is not a valid arithmetic string", s),
         }
     }
 
