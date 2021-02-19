@@ -36,6 +36,7 @@ impl VM {
     }
 
     pub fn translate(&mut self) {
+        self.code.write_init();
         for file in self.files.clone() {
             self.translate_one_file(&file)
         }

@@ -35,6 +35,7 @@ pub struct Code {
     writer: BufWriter<File>,
     filename: String,
     label_count: i32,
+    call_count: i32,
 }
 
 impl Code {
@@ -46,6 +47,7 @@ impl Code {
             writer,
             filename,
             label_count: 0,
+            call_count: 0,
         }
     }
 
@@ -400,8 +402,18 @@ impl Code {
     }
 
     pub fn write_call(&mut self, function_name: &str, num_args: i32) {
+        let res = self.call(function_name, num_args);
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write_all(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
+    }
+
+    fn call(&mut self, function_name: &str, num_args: i32) -> Vec<String> {
         let mut res = Vec::new();
-        let ret_addr_label = format!("{}$ret", function_name);
+        let ret_addr_label = format!("{}$ret.{}", function_name, self.call_count);
+        self.call_count += 1;
         res.push(format!("@{}", ret_addr_label)); // push retAddrLabel
         res.push("D=A".to_string());
         res.push("@SP".to_string());
@@ -428,12 +440,7 @@ impl Code {
         res.push(format!("@{}", function_name)); // goto function_name
         res.push("0;JMP".to_string());
         res.push(format!("({})", ret_addr_label)); 
-
-        for mut s in res {
-            s.push_str("\r\n");
-            self.writer.write_all(s.as_bytes()).unwrap();
-        }
-        self.writer.flush().unwrap();
+        res
     }
 
     fn push_segment(segment: Segment) -> Vec<String> {
@@ -446,6 +453,21 @@ impl Code {
         res.push("@SP".to_string());
         res.push("M=M+1".to_string());
         res
+    }
+
+    pub fn write_init(&mut self) {
+        let mut res = Vec::new();
+        res.push("@256".to_string());
+        res.push("D=A".to_string());
+        res.push("@SP".to_string());
+        res.push("M=D".to_string());
+        res.extend(self.call("Sys.init", 0));
+
+        for mut s in res {
+            s.push_str("\r\n");
+            self.writer.write(s.as_bytes()).unwrap();
+        }
+        self.writer.flush().unwrap();
     }
 
     fn str2arithmetic(s: &str) -> Arithmetic {
