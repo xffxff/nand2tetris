@@ -16,7 +16,7 @@ impl CompilationEngine {
         let mut output_path = path.to_path_buf();
         output_path.set_extension("xml");
         let file = File::create(&output_path).unwrap();
-        let writer = EmitterConfig::new().perform_indent(true).create_writer(file);
+        let writer = EmitterConfig::new().write_document_declaration(false).perform_indent(true).create_writer(file);
         CompilationEngine {
             tkzr,
             writer 
@@ -24,6 +24,8 @@ impl CompilationEngine {
     }
 
     pub fn compile_class(&mut self) {
+        let start_event: XmlEvent = XmlEvent::start_element("tokens").into();
+        self.writer.write(start_event).unwrap();
         while self.tkzr.has_more_commands() {
             self.tkzr.advance();
             match self.tkzr.token_type() {
@@ -45,10 +47,15 @@ impl CompilationEngine {
                     let events = Self::compile_string(&val);
                     self.write_events(events);
 
+                },
+                TokenType::Identifier(identifier) => {
+                    let events = Self::compile_identifier(&identifier);
+                    self.write_events(events);
                 }
-                _ => {}
             };
         }
+        let end_event: XmlEvent = XmlEvent::end_element().into();
+        self.writer.write(end_event).unwrap();
     }
 
     fn write_events(&mut self, events: Vec<XmlEvent>) {
@@ -59,7 +66,7 @@ impl CompilationEngine {
 
     fn compile_key_world(key_world: &str) -> Vec<XmlEvent> {
         let mut events = Vec::new();
-        let start_event: XmlEvent = XmlEvent::start_element("keyworld").into();
+        let start_event: XmlEvent = XmlEvent::start_element("keyword").into();
         events.push(start_event);
         let body: XmlEvent = XmlEvent::characters(key_world).into();
         events.push(body);
@@ -95,6 +102,17 @@ impl CompilationEngine {
         let start_event: XmlEvent = XmlEvent::start_element("stringConstant").into();
         events.push(start_event);
         let body: XmlEvent = XmlEvent::characters(val).into();
+        events.push(body);
+        let end_event: XmlEvent = XmlEvent::end_element().into();
+        events.push(end_event);
+        events
+    }
+
+    fn compile_identifier(identifier: &str) -> Vec<XmlEvent> {
+        let mut events = Vec::new();
+        let start_event: XmlEvent = XmlEvent::start_element("identifier").into();
+        events.push(start_event);
+        let body: XmlEvent = XmlEvent::characters(identifier).into();
         events.push(body);
         let end_event: XmlEvent = XmlEvent::end_element().into();
         events.push(end_event);
