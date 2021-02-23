@@ -117,7 +117,16 @@ impl Tokenizer {
     }
 
     pub fn advance(&mut self) {
-        self.current_token = self.tokens.pop_front().unwrap();
+        let mut current_token = self.tokens.pop_front().unwrap();
+        if current_token == "\"" {
+            let mut next_token = self.tokens.pop_front().unwrap();
+            while next_token != "\"" {
+                current_token.push_str(&next_token);
+                next_token = self.tokens.pop_front().unwrap();
+            }
+            current_token.push_str(&next_token);
+        }
+        self.current_token = current_token;
     }
 
     pub fn token_type(&self) -> TokenType {
@@ -134,6 +143,11 @@ impl Tokenizer {
         let int_val = self.int_val();
         if int_val.is_some() {
             return TokenType::IntConst(int_val.unwrap());
+        }
+
+        let string_val = self.string_val();
+        if string_val.is_some() {
+            return TokenType::StringConst(string_val.unwrap());
         }
         return TokenType::Identifier(self.current_token.clone());
     }
@@ -202,5 +216,14 @@ impl Tokenizer {
             Ok(v) => Some(v),
             Err(_) => None,
         }
+    }
+
+    fn string_val(&self) -> Option<String> {
+        if self.current_token.starts_with("\"") {
+            let current_token = self.current_token.trim_start_matches("\"");
+            let current_token = current_token.trim_end_matches("\"");
+            return Some(current_token.to_string());
+        }
+        None
     }
 }
