@@ -1,9 +1,8 @@
+use std::collections::VecDeque;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::io::SeekFrom;
 use std::path::Path;
-use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq)]
 pub enum KeyWorld {
@@ -11,7 +10,7 @@ pub enum KeyWorld {
     Method,
     Function,
     Constructor,
-    Int, 
+    Int,
     Boolean,
     Char,
     Void,
@@ -40,7 +39,6 @@ pub enum TokenType {
 }
 
 pub struct Tokenizer {
-    reader: BufReader<File>,
     pub current_token: String,
     tokens: VecDeque<String>,
 }
@@ -51,7 +49,6 @@ impl Tokenizer {
         let mut reader = BufReader::new(f);
         let tokens = Self::get_all_tokens(&mut reader);
         Tokenizer {
-            reader,
             tokens,
             current_token: String::new(),
         }
@@ -86,7 +83,7 @@ impl Tokenizer {
             }
             new_line = match new_line.find("//") {
                 Some(size) => new_line[..size].to_string(),
-                None => new_line
+                None => new_line,
             };
             new_line = new_line.trim().to_string();
             if new_line.len() == 0 {
@@ -101,9 +98,7 @@ impl Tokenizer {
     fn get_tokens_from_one_line(line: &str) -> Vec<String> {
         let mut res = Vec::new();
         let mut last = 0;
-        for (index, matched) in line.match_indices(
-            |c: char| !c.is_alphanumeric()
-        ) {
+        for (index, matched) in line.match_indices(|c: char| !c.is_alphanumeric()) {
             if last != index {
                 res.push(&line[last..index]);
             }
@@ -113,7 +108,11 @@ impl Tokenizer {
         if last < line.len() {
             res.push(&line[last..]);
         }
-        let res = res.iter().map(|x| x.to_string()).filter(|x| x.trim().len() != 0).collect::<Vec<_>>();
+        let res = res
+            .iter()
+            .map(|x| x.to_string())
+            .filter(|x| x.trim().len() != 0)
+            .collect::<Vec<_>>();
         res
     }
 
@@ -140,55 +139,58 @@ impl Tokenizer {
     }
 
     fn key_world(&self) -> Option<KeyWorld> {
-        if self.current_token == String::from("class") {
+        if self.current_token == "class" {
             Some(KeyWorld::Class)
-        } else if self.current_token == String::from("constructor") {
+        } else if self.current_token == "constructor" {
             Some(KeyWorld::Constructor)
-        } else if self.current_token == String::from("function") {
+        } else if self.current_token == "function" {
             Some(KeyWorld::Function)
-        } else if self.current_token == String::from("method") {
+        } else if self.current_token == "method" {
             Some(KeyWorld::Method)
-        } else if self.current_token == String::from("field") {
+        } else if self.current_token == "field" {
             Some(KeyWorld::Field)
-        } else if self.current_token == String::from("static") {
+        } else if self.current_token == "static" {
             Some(KeyWorld::Static)
-        } else if self.current_token == String::from("var") {
+        } else if self.current_token == "var" {
             Some(KeyWorld::Var)
-        } else if self.current_token == String::from("int") {
+        } else if self.current_token == "int" {
             Some(KeyWorld::Int)
-        } else if self.current_token == String::from("char") {
+        } else if self.current_token == "char" {
             Some(KeyWorld::Char)
-        } else if self.current_token == String::from("boolean") {
+        } else if self.current_token == "boolean" {
             Some(KeyWorld::Boolean)
-        } else if self.current_token == String::from("void") {
+        } else if self.current_token == "void" {
             Some(KeyWorld::Void)
-        } else if self.current_token == String::from("true") {
+        } else if self.current_token == "true" {
             Some(KeyWorld::True)
-        } else if self.current_token == String::from("false") {
+        } else if self.current_token == "false" {
             Some(KeyWorld::False)
-        } else if self.current_token == String::from("null") {
+        } else if self.current_token == "null" {
             Some(KeyWorld::Null)
-        } else if self.current_token == String::from("this") {
+        } else if self.current_token == "this" {
             Some(KeyWorld::This)
-        } else if self.current_token == String::from("let") {
+        } else if self.current_token == "let" {
             Some(KeyWorld::Let)
-        } else if self.current_token == String::from("do") {
+        } else if self.current_token == "do" {
             Some(KeyWorld::Do)
-        } else if self.current_token == String::from("if") {
+        } else if self.current_token == "if" {
             Some(KeyWorld::If)
-        } else if self.current_token == String::from("else") {
+        } else if self.current_token == "else" {
             Some(KeyWorld::Else)
-        } else if self.current_token == String::from("while") {
+        } else if self.current_token == "while" {
             Some(KeyWorld::While)
-        } else if self.current_token == String::from("return") {
+        } else if self.current_token == "return" {
             Some(KeyWorld::Return)
         } else {
             None
         }
     }
-    
+
     fn symbol(&self) -> Option<String> {
-        let symbols = vec!["{", "}", "(", ")", "[", "]", ".", ",", ";", "+", "-", "*", "/", "&", "|", "<", ">", "=", "~"];
+        let symbols = vec![
+            "{", "}", "(", ")", "[", "]", ".", ",", ";", "+", "-", "*", "/", "&", "|", "<", ">",
+            "=", "~",
+        ];
         if symbols.contains(&self.current_token.as_str()) {
             return Some(self.current_token.clone());
         }

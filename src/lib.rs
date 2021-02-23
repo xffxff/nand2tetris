@@ -1,3 +1,3 @@
 pub mod assembler;
-pub mod vm;
 pub mod compiler;
+pub mod vm;

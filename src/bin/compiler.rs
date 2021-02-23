@@ -1,5 +1,5 @@
-use std::path::Path;
 use nand2tetris_assember::compiler::tkzr::Tokenizer;
+use std::path::Path;
 
 fn main() {
     let path = Path::new("Square/Square.jack");
