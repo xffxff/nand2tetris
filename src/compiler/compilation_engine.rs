@@ -1,13 +1,11 @@
-use super::tkzr::{self, KeyWorld, Tokenizer, TokenType};
-use std::path::Path;
-use xml::writer::{EventWriter, EmitterConfig, XmlEvent};
-use std::io::prelude::*;
-use std::io::BufWriter;
+use super::tkzr::{TokenType, Tokenizer};
 use std::fs::File;
+use std::path::Path;
+use xml::writer::{EmitterConfig, EventWriter, XmlEvent};
 
 pub struct CompilationEngine {
     tkzr: Tokenizer,
-    writer: EventWriter<File>
+    writer: EventWriter<File>,
 }
 
 impl CompilationEngine {
@@ -16,11 +14,11 @@ impl CompilationEngine {
         let mut output_path = path.to_path_buf();
         output_path.set_extension("xml");
         let file = File::create(&output_path).unwrap();
-        let writer = EmitterConfig::new().write_document_declaration(false).perform_indent(true).create_writer(file);
-        CompilationEngine {
-            tkzr,
-            writer 
-        }
+        let writer = EmitterConfig::new()
+            .write_document_declaration(false)
+            .perform_indent(true)
+            .create_writer(file);
+        CompilationEngine { tkzr, writer }
     }
 
     pub fn compile_class(&mut self) {
@@ -33,21 +31,20 @@ impl CompilationEngine {
                     let key_world = format!("{}", key_world);
                     let events = Self::compile_key_world(&key_world);
                     self.write_events(events);
-                }, 
+                }
                 TokenType::Symbol(symbol) => {
                     let events = Self::compile_symbol(&symbol);
                     self.write_events(events);
-                },
+                }
                 TokenType::IntConst(val) => {
                     let val = val.to_string();
                     let events = Self::compile_int(&val);
                     self.write_events(events);
-                },
+                }
                 TokenType::StringConst(val) => {
                     let events = Self::compile_string(&val);
                     self.write_events(events);
-
-                },
+                }
                 TokenType::Identifier(identifier) => {
                     let events = Self::compile_identifier(&identifier);
                     self.write_events(events);
