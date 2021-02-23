@@ -41,15 +41,18 @@ pub enum TokenType {
 pub struct Tokenizer {
     reader: BufReader<File>,
     pub current_token: String,
+    tokens: Vec<String>,
     eof: bool,
 }
 
 impl Tokenizer {
     pub fn new(path: &Path) -> Self {
         let f = File::open(path).unwrap();
-        let reader = BufReader::new(f);
+        let mut reader = BufReader::new(f);
+        let tokens = Self::get_all_tokens(&mut reader);
         Tokenizer {
             reader,
+            tokens,
             current_token: String::new(),
             eof: false,
         }
@@ -57,6 +60,62 @@ impl Tokenizer {
 
     pub fn has_more_commands(&self) -> bool {
         !self.eof
+    }
+
+    fn get_all_tokens(reader: &mut BufReader<File>) -> Vec<String> {
+        let mut commenting = false;
+        let mut tokens = Vec::new();
+        loop {
+            let mut new_line = String::new();
+            let len = reader.read_line(&mut new_line).unwrap();
+            if len == 0 {
+                break;
+            }
+            new_line = new_line.trim().to_string();
+            if new_line.starts_with("/*") {
+                if !new_line.ends_with("*/") {
+                    commenting = true;
+                }
+                continue;
+            }
+            if new_line.ends_with("*/") {
+                commenting = false;
+                continue;
+            }
+            if commenting {
+                continue;
+            }
+            new_line = match new_line.find("//") {
+                Some(size) => new_line[..size].to_string(),
+                None => new_line
+            };
+            new_line = new_line.trim().to_string();
+            if new_line.len() == 0 {
+                continue;
+            }
+
+            tokens.extend(Self::get_tokens_from_one_line(&new_line));
+        }
+        tokens
+    }
+
+    fn get_tokens_from_one_line(line: &str) -> Vec<String> {
+        let mut res = Vec::new();
+        let mut last = 0;
+        for (index, matched) in line.match_indices(
+            |c: char| !c.is_alphanumeric()
+        ) {
+            if last != index {
+                res.push(&line[last..index]);
+            }
+            res.push(matched);
+            last = index + matched.len();
+        }
+        if last < line.len() {
+            res.push(&line[last..]);
+        }
+        let res = res.iter().map(|x| x.to_string()).filter(|x| x.trim().len() != 0).collect::<Vec<_>>();
+        res
     }
 
     // pub fn advance(&mut self) {
