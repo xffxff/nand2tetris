@@ -3,6 +3,9 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
+use std::fmt;
+
+use fmt::Formatter;
 
 #[derive(Debug, PartialEq)]
 pub enum KeyWorld {
@@ -27,6 +30,34 @@ pub enum KeyWorld {
     False,
     Null,
     This,
+}
+
+impl fmt::Display for KeyWorld {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            KeyWorld::Class => write!(f, "class"),
+            KeyWorld::Method => write!(f, "method"),
+            KeyWorld::Function => write!(f, "function"),
+            KeyWorld::Constructor => write!(f, "constructor"),
+            KeyWorld::Int => write!(f, "int"),
+            KeyWorld::Boolean => write!(f, "boolean"),
+            KeyWorld::Char => write!(f, "char"),
+            KeyWorld::Void => write!(f, "void"),
+            KeyWorld::Var => write!(f, "var"),
+            KeyWorld::Static => write!(f, "static"),
+            KeyWorld::Field => write!(f, "field"),
+            KeyWorld::Let => write!(f, "let"),
+            KeyWorld::Do => write!(f, "do"),
+            KeyWorld::If => write!(f, "if"),
+            KeyWorld::Else => write!(f, "else"),
+            KeyWorld::While => write!(f, "while"),
+            KeyWorld::Return => write!(f, "return"),
+            KeyWorld::True => write!(f, "true"),
+            KeyWorld::False => write!(f, "false"),
+            KeyWorld::Null => write!(f, "null"),
+            KeyWorld::This => write!(f, "this"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
