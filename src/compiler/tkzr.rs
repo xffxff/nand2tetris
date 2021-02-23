@@ -235,7 +235,13 @@ impl Tokenizer {
             "=", "~",
         ];
         if symbols.contains(&self.current_token.as_str()) {
-            return Some(self.current_token.clone());
+            match self.current_token.as_str() {
+                "<" => return Some("&lt;".to_string()),
+                ">" => return Some("&gt;".to_string()), 
+                "\"" => return Some("&quot;".to_string()),
+                "&" => return Some("&amp;".to_string()),
+                _ => return Some(self.current_token.clone()),
+            }
         }
         None
     }

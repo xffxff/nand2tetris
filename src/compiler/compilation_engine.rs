@@ -14,7 +14,9 @@ impl CompilationEngine {
         let mut output_path = path.to_path_buf();
         output_path.set_extension("xml");
         let file = File::create(&output_path).unwrap();
-        let writer = EmitterConfig::new()
+        let mut config = EmitterConfig::new();
+        config.perform_escaping = false;
+        let writer = config
             .write_document_declaration(false)
             .perform_indent(true)
             .create_writer(file);
