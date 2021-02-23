@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::SeekFrom;
 use std::path::Path;
+use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq)]
 pub enum KeyWorld {
@@ -32,17 +33,16 @@ pub enum KeyWorld {
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
     KeyWorld(KeyWorld),
-    Symbol,
-    Identifier,
-    IntConst,
-    StringConst,
+    Symbol(String),
+    Identifier(String),
+    IntConst(i16),
+    StringConst(String),
 }
 
 pub struct Tokenizer {
     reader: BufReader<File>,
     pub current_token: String,
-    tokens: Vec<String>,
-    eof: bool,
+    tokens: VecDeque<String>,
 }
 
 impl Tokenizer {
@@ -54,17 +54,16 @@ impl Tokenizer {
             reader,
             tokens,
             current_token: String::new(),
-            eof: false,
         }
     }
 
     pub fn has_more_commands(&self) -> bool {
-        !self.eof
+        !self.tokens.is_empty()
     }
 
-    fn get_all_tokens(reader: &mut BufReader<File>) -> Vec<String> {
+    fn get_all_tokens(reader: &mut BufReader<File>) -> VecDeque<String> {
         let mut commenting = false;
-        let mut tokens = Vec::new();
+        let mut tokens = VecDeque::new();
         loop {
             let mut new_line = String::new();
             let len = reader.read_line(&mut new_line).unwrap();
@@ -118,30 +117,27 @@ impl Tokenizer {
         res
     }
 
-    // pub fn advance(&mut self) {
-    //     loop {
-    //         if !self.has_more_commands() {
-    //             break;
-    //         }
-    //         self.current_token.clear();
-    //         let len = self.reader.read_line(&mut self.current_token).unwrap();
-    //         if len == 0 {
-    //             self.eof = true;
-    //         }
-    //         let current_token = match self.current_token.find("//") {
-    //             Some(size) => &self.current_token[..size],
-    //             None => &self.current_token,
-    //         };
-    //         self.current_token = current_token.trim().to_string();
-    //         if self.command_type() != CommandType::WhiteSpace {
-    //             break;
-    //         }
-    //     }
-    // }
+    pub fn advance(&mut self) {
+        self.current_token = self.tokens.pop_front().unwrap();
+    }
 
-    // pub fn token_type(&self) -> TokenType {
-        
-    // }
+    pub fn token_type(&self) -> TokenType {
+        let key_world = self.key_world();
+        if key_world.is_some() {
+            return TokenType::KeyWorld(key_world.unwrap());
+        }
+
+        let symbol = self.symbol();
+        if symbol.is_some() {
+            return TokenType::Symbol(symbol.unwrap());
+        }
+
+        let int_val = self.int_val();
+        if int_val.is_some() {
+            return TokenType::IntConst(int_val.unwrap());
+        }
+        return TokenType::Identifier(self.current_token.clone());
+    }
 
     fn key_world(&self) -> Option<KeyWorld> {
         if self.current_token == String::from("class") {
@@ -199,9 +195,10 @@ impl Tokenizer {
         None
     }
 
-    pub fn reset(&mut self) {
-        self.reader.seek(SeekFrom::Start(0)).unwrap();
-        self.current_token.clear();
-        self.eof = false;
+    fn int_val(&self) -> Option<i16> {
+        match self.current_token.parse::<i16>() {
+            Ok(v) => Some(v),
+            Err(_) => None,
+        }
     }
 }
