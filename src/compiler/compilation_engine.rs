@@ -110,6 +110,7 @@ impl CompilationEngine {
                 TokenType::KeyWorld(key_world) => {
                     match key_world {
                         KeyWorld::Var => self.compile_var_dec(),
+                        KeyWorld::Let => self.compile_let(),
                         _ => self.compile_current_token(),
                     }
                 }
@@ -136,6 +137,51 @@ impl CompilationEngine {
 
     fn compile_statements(&mut self) {
 
+    }
+
+    fn compile_let(&mut self) {
+        self.write_start_event("letStatement");
+        self.compile_key_world();
+        self.compile_identifier();
+        self.compile_symbol();
+        self.compile_expression();
+        self.write_end_event();
+    }
+
+    fn compile_expression(&mut self) {
+        self.write_start_event("expression");
+        self.compile_term();
+        self.write_end_event();
+    }
+
+    fn compile_term(&mut self) {
+        self.write_start_event("term");
+        if self.tkzr.next_token() == "." {
+            self.compile_subroutine_call();
+        }
+        self.write_end_event();
+    }
+
+    fn compile_expression_list(&mut self) {
+        self.compile_symbol();
+        self.write_start_event("expressionList");
+        loop {
+            if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
+                if symbol == ")" {
+                    break;
+                }
+            }
+            self.compile_current_token();
+        }
+        self.write_end_event();
+        self.compile_symbol();
+    }
+
+    fn compile_subroutine_call(&mut self) {
+        self.compile_identifier();
+        self.compile_symbol();
+        self.compile_identifier();
+        self.compile_expression_list();
     }
 
     fn compile_current_token(&mut self) {
