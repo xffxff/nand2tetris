@@ -31,25 +31,20 @@ impl CompilationEngine {
             match self.tkzr.token_type() {
                 TokenType::KeyWorld(key_world) => {
                     let key_world = format!("{}", key_world);
-                    let events = Self::compile_key_world(&key_world);
-                    self.write_events(events);
+                    self.compile_key_world(&key_world);
                 }
                 TokenType::Symbol(symbol) => {
-                    let events = Self::compile_symbol(&symbol);
-                    self.write_events(events);
+                    self.compile_symbol(&symbol);
                 }
                 TokenType::IntConst(val) => {
                     let val = val.to_string();
-                    let events = Self::compile_int(&val);
-                    self.write_events(events);
+                    self.compile_int(&val);
                 }
                 TokenType::StringConst(val) => {
-                    let events = Self::compile_string(&val);
-                    self.write_events(events);
+                    self.compile_string(&val);
                 }
                 TokenType::Identifier(identifier) => {
-                    let events = Self::compile_identifier(&identifier);
-                    self.write_events(events);
+                    self.compile_identifier(&identifier);
                 }
             };
         }
@@ -57,64 +52,48 @@ impl CompilationEngine {
         self.writer.write(end_event).unwrap();
     }
 
-    fn write_events(&mut self, events: Vec<XmlEvent>) {
-        for event in events {
-            self.writer.write(event).unwrap();
-        }
+    fn write_start_event(&mut self, name: &str) {
+        let event: XmlEvent = XmlEvent::start_element(name).into();
+        self.writer.write(event).unwrap();
     }
 
-    fn compile_key_world(key_world: &str) -> Vec<XmlEvent> {
-        let mut events = Vec::new();
-        let start_event: XmlEvent = XmlEvent::start_element("keyword").into();
-        events.push(start_event);
-        let body: XmlEvent = XmlEvent::characters(key_world).into();
-        events.push(body);
-        let end_event: XmlEvent = XmlEvent::end_element().into();
-        events.push(end_event);
-        events
+    fn write_characters(&mut self, s: &str) {
+        let event: XmlEvent = XmlEvent::characters(s);
+        self.writer.write(event).unwrap();
     }
 
-    fn compile_symbol(symbol: &str) -> Vec<XmlEvent> {
-        let mut events = Vec::new();
-        let start_event: XmlEvent = XmlEvent::start_element("symbol").into();
-        events.push(start_event);
-        let body: XmlEvent = XmlEvent::characters(symbol).into();
-        events.push(body);
-        let end_event: XmlEvent = XmlEvent::end_element().into();
-        events.push(end_event);
-        events
+    fn write_end_event(&mut self) {
+        let event: XmlEvent = XmlEvent::end_element().into();
+        self.writer.write(event).unwrap();
     }
 
-    fn compile_int(val: &str) -> Vec<XmlEvent> {
-        let mut events = Vec::new();
-        let start_event: XmlEvent = XmlEvent::start_element("integerConstant").into();
-        events.push(start_event);
-        let body: XmlEvent = XmlEvent::characters(val).into();
-        events.push(body);
-        let end_event: XmlEvent = XmlEvent::end_element().into();
-        events.push(end_event);
-        events
+    fn compile_key_world(&mut self, key_world: &str) {
+        self.write_start_event("keyword");
+        self.write_characters(key_world);
+        self.write_end_event();
     }
 
-    fn compile_string(val: &str) -> Vec<XmlEvent> {
-        let mut events = Vec::new();
-        let start_event: XmlEvent = XmlEvent::start_element("stringConstant").into();
-        events.push(start_event);
-        let body: XmlEvent = XmlEvent::characters(val).into();
-        events.push(body);
-        let end_event: XmlEvent = XmlEvent::end_element().into();
-        events.push(end_event);
-        events
+    fn compile_symbol(&mut self, symbol: &str) {
+        self.write_start_event("symbol");
+        self.write_characters(symbol);
+        self.write_end_event();
     }
 
-    fn compile_identifier(identifier: &str) -> Vec<XmlEvent> {
-        let mut events = Vec::new();
-        let start_event: XmlEvent = XmlEvent::start_element("identifier").into();
-        events.push(start_event);
-        let body: XmlEvent = XmlEvent::characters(identifier).into();
-        events.push(body);
-        let end_event: XmlEvent = XmlEvent::end_element().into();
-        events.push(end_event);
-        events
+    fn compile_int(&mut self, val: &str) {
+        self.write_start_event("integerConstant");
+        self.write_characters(val);
+        self.write_end_event();
+    }
+
+    fn compile_string(&mut self, val: &str) {
+        self.write_start_event("stringConstant");
+        self.write_characters(val);
+        self.write_end_event();
+    }
+
+    fn compile_identifier(&mut self, identifier: &str) {
+        self.write_start_event("identifier");
+        self.write_characters(identifier);
+        self.write_end_event();
     }
 }
