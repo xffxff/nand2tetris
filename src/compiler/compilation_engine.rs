@@ -122,6 +122,22 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    fn compile_var_dec(&mut self) {
+        self.write_start_event("varDec");
+        self.compile_key_world(self.tkzr.token_type());
+        self.tkzr.advance();
+        loop {
+            self.compile_current_token();
+            if let TokenType::Symbol(s) = self.tkzr.token_type() {
+                if s == ";" {
+                    break;
+                }
+            }
+            self.tkzr.advance();
+        }
+        self.write_end_event();
+    }
+
     fn compile_current_token(&mut self) {
         match self.tkzr.token_type() {
             TokenType::KeyWorld(key_world) => {
@@ -131,7 +147,10 @@ impl CompilationEngine {
                     },
                     KeyWorld::Function => {
                         self.compile_subroutine_dec();
-                    }
+                    },
+                    KeyWorld::Var => {
+                        self.compile_var_dec();
+                    },
                     _ => {
                         self.compile_key_world(self.tkzr.token_type());
                     }
@@ -189,7 +208,7 @@ impl CompilationEngine {
             self.write_characters(&val);
             self.write_end_event();
         } else {
-            panic!("{:?} is not a StringConst");
+            panic!("{:?} is not a StringConst", token);
         }
     }
 
@@ -199,7 +218,7 @@ impl CompilationEngine {
             self.write_characters(&identifier);
             self.write_end_event();
         } else {
-            panic!("{:?} is not a Identifier");
+            panic!("{:?} is not a Identifier", token);
         }
     }
 }
