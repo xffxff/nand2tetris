@@ -67,18 +67,74 @@ impl CompilationEngine {
 
     fn compile_subroutine_dec(&mut self) {
         self.write_start_event("subroutineDec");
-        loop {
+        self.compile_key_world(self.tkzr.token_type());
+        self.tkzr.advance();
+        self.compile_key_world(self.tkzr.token_type());
+        self.tkzr.advance();
+        self.compile_identifier(self.tkzr.token_type());
+        self.tkzr.advance();
+        self.compile_parameter_list();
+        self.compile_subroutine_body();
+        self.write_end_event();
+    }
 
+    fn compile_parameter_list(&mut self) {
+        self.compile_symbol(self.tkzr.token_type());
+        self.tkzr.advance();
+        self.write_start_event("parameterList");
+        loop {
+            if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
+                if symbol == ")" {
+                    break;
+                }
+            }
+            self.compile_current_token();
+            self.tkzr.advance();
         }
+        self.write_end_event();
+        self.compile_symbol(self.tkzr.token_type());
+        self.tkzr.advance();
+    }
+
+    fn compile_subroutine_body(&mut self) {
+        self.write_start_event("subroutineBody");
+        self.compile_symbol(self.tkzr.token_type());
+        self.tkzr.advance();
+        let mut open_bracket_num = 1;
+        loop {
+            if open_bracket_num == 0 {
+                break;
+            }
+            match self.tkzr.token_type() {
+                TokenType::Symbol(symbol) => {
+                    if symbol == "{" {
+                        open_bracket_num += 1;
+                    } 
+                    if symbol == "}" {
+                        open_bracket_num -= 1;
+                    }
+                    self.compile_symbol(self.tkzr.token_type());
+                }, 
+                _ => self.compile_current_token()
+            }
+            self.tkzr.advance();
+        }
+        self.write_end_event();
     }
 
     fn compile_current_token(&mut self) {
         match self.tkzr.token_type() {
             TokenType::KeyWorld(key_world) => {
-                if key_world == KeyWorld::Static {
-                    self.compile_class_var_dec();
-                } else {
-                    self.compile_key_world(self.tkzr.token_type());
+                match key_world {
+                    KeyWorld::Static => {
+                        self.compile_class_var_dec();
+                    },
+                    KeyWorld::Function => {
+                        self.compile_subroutine_dec();
+                    }
+                    _ => {
+                        self.compile_key_world(self.tkzr.token_type());
+                    }
                 }
             }
             TokenType::Symbol(_) => {
