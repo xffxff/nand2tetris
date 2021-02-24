@@ -1,5 +1,5 @@
 use super::tkzr::{TokenType, Tokenizer, KeyWorld};
-use std::{convert::TryInto, fs::File};
+use std::fs::File;
 use std::path::Path;
 use xml::writer::{EmitterConfig, EventWriter, XmlEvent};
 
@@ -93,6 +93,7 @@ impl CompilationEngine {
         self.write_start_event("subroutineBody");
         self.compile_symbol();
         let mut open_bracket_num = 1;
+        let mut statement_start = false;
         loop {
             if open_bracket_num == 0 {
                 break;
@@ -105,13 +106,21 @@ impl CompilationEngine {
                     if symbol == "}" {
                         open_bracket_num -= 1;
                     }
+                    if open_bracket_num == 0 {
+                        self.write_end_event();
+                    }
                     self.compile_symbol();
                 }, 
                 TokenType::KeyWorld(key_world) => {
                     match key_world {
                         KeyWorld::Var => self.compile_var_dec(),
-                        KeyWorld::Let => self.compile_let(),
-                        KeyWorld::Do => self.compile_do(),
+                        KeyWorld::Let | KeyWorld::Do | KeyWorld::Return => {
+                            if !statement_start {
+                                self.write_start_event("statements");
+                                statement_start = true;
+                            }
+                            self.compile_statements(); 
+                        },
                         _ => self.compile_current_token(),
                     }
                 }
@@ -137,7 +146,14 @@ impl CompilationEngine {
     }
 
     fn compile_statements(&mut self) {
-
+        if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
+            match key_world {
+                KeyWorld::Let => self.compile_let(),
+                KeyWorld::Do => self.compile_do(),
+                KeyWorld::Return => self.compile_return(),
+                _ => {}
+            }
+        }
     }
 
     fn compile_let(&mut self) {
@@ -154,6 +170,13 @@ impl CompilationEngine {
         self.write_start_event("doStatement");
         self.compile_key_world();
         self.compile_subroutine_call();
+        self.compile_symbol();
+        self.write_end_event();
+    }
+
+    fn compile_return(&mut self) {
+        self.write_start_event("returnStatement");
+        self.compile_key_world();
         self.compile_symbol();
         self.write_end_event();
     }
