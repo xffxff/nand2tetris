@@ -111,6 +111,7 @@ impl CompilationEngine {
                     match key_world {
                         KeyWorld::Var => self.compile_var_dec(),
                         KeyWorld::Let => self.compile_let(),
+                        KeyWorld::Do => self.compile_do(),
                         _ => self.compile_current_token(),
                     }
                 }
@@ -145,6 +146,15 @@ impl CompilationEngine {
         self.compile_identifier();
         self.compile_symbol();
         self.compile_expression();
+        self.compile_symbol();
+        self.write_end_event();
+    }
+
+    fn compile_do(&mut self) {
+        self.write_start_event("doStatement");
+        self.compile_key_world();
+        self.compile_subroutine_call();
+        self.compile_symbol();
         self.write_end_event();
     }
 

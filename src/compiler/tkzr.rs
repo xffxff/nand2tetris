@@ -158,6 +158,10 @@ impl Tokenizer {
         self.current_token = current_token;
     }
 
+    pub fn next_token(&mut self) -> String {
+        self.tokens.front().unwrap().to_owned()
+    }
+
     pub fn token_type(&self) -> TokenType {
         let key_world = self.key_world();
         if key_world.is_some() {
