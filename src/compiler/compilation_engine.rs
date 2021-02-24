@@ -26,8 +26,8 @@ impl CompilationEngine {
     pub fn compile_class(&mut self) {
         let start_event: XmlEvent = XmlEvent::start_element("tokens").into();
         self.writer.write(start_event).unwrap();
+        self.tkzr.advance();
         while self.tkzr.has_more_commands() {
-            self.tkzr.advance();
             self.compile_current_token();
         }
         let end_event: XmlEvent = XmlEvent::end_element().into();
@@ -51,36 +51,31 @@ impl CompilationEngine {
 
     fn compile_class_var_dec(&mut self) {
         self.write_start_event("classVarDec");
-        self.compile_key_world(self.tkzr.token_type());
-        self.tkzr.advance();
+        self.compile_key_world();
         loop {
-            self.compile_current_token();
             if let TokenType::Symbol(s) = self.tkzr.token_type() {
                 if s == ";" {
                     break;
                 }
             }
-            self.tkzr.advance();
+            self.compile_current_token();
         }
+        self.compile_symbol();
         self.write_end_event();
     }
 
     fn compile_subroutine_dec(&mut self) {
         self.write_start_event("subroutineDec");
-        self.compile_key_world(self.tkzr.token_type());
-        self.tkzr.advance();
-        self.compile_key_world(self.tkzr.token_type());
-        self.tkzr.advance();
-        self.compile_identifier(self.tkzr.token_type());
-        self.tkzr.advance();
+        self.compile_key_world();
+        self.compile_key_world();
+        self.compile_identifier();
         self.compile_parameter_list();
         self.compile_subroutine_body();
         self.write_end_event();
     }
 
     fn compile_parameter_list(&mut self) {
-        self.compile_symbol(self.tkzr.token_type());
-        self.tkzr.advance();
+        self.compile_symbol();
         self.write_start_event("parameterList");
         loop {
             if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
@@ -89,17 +84,14 @@ impl CompilationEngine {
                 }
             }
             self.compile_current_token();
-            self.tkzr.advance();
         }
         self.write_end_event();
-        self.compile_symbol(self.tkzr.token_type());
-        self.tkzr.advance();
+        self.compile_symbol();
     }
 
     fn compile_subroutine_body(&mut self) {
         self.write_start_event("subroutineBody");
-        self.compile_symbol(self.tkzr.token_type());
-        self.tkzr.advance();
+        self.compile_symbol();
         let mut open_bracket_num = 1;
         loop {
             if open_bracket_num == 0 {
@@ -113,29 +105,37 @@ impl CompilationEngine {
                     if symbol == "}" {
                         open_bracket_num -= 1;
                     }
-                    self.compile_symbol(self.tkzr.token_type());
+                    self.compile_symbol();
                 }, 
+                TokenType::KeyWorld(key_world) => {
+                    match key_world {
+                        KeyWorld::Var => self.compile_var_dec(),
+                        _ => self.compile_current_token(),
+                    }
+                }
                 _ => self.compile_current_token()
             }
-            self.tkzr.advance();
         }
         self.write_end_event();
     }
 
     fn compile_var_dec(&mut self) {
         self.write_start_event("varDec");
-        self.compile_key_world(self.tkzr.token_type());
-        self.tkzr.advance();
+        self.compile_key_world();
         loop {
-            self.compile_current_token();
             if let TokenType::Symbol(s) = self.tkzr.token_type() {
                 if s == ";" {
                     break;
                 }
             }
-            self.tkzr.advance();
+            self.compile_current_token();
         }
+        self.compile_symbol();
         self.write_end_event();
+    }
+
+    fn compile_statements(&mut self) {
+
     }
 
     fn compile_current_token(&mut self) {
@@ -148,77 +148,79 @@ impl CompilationEngine {
                     KeyWorld::Function => {
                         self.compile_subroutine_dec();
                     },
-                    KeyWorld::Var => {
-                        self.compile_var_dec();
-                    },
                     _ => {
-                        self.compile_key_world(self.tkzr.token_type());
+                        self.compile_key_world();
                     }
                 }
             }
             TokenType::Symbol(_) => {
-                self.compile_symbol(self.tkzr.token_type());
+                self.compile_symbol();
             }
             TokenType::IntConst(_) => {
-                self.compile_int(self.tkzr.token_type());
+                self.compile_int();
             }
             TokenType::StringConst(_) => {
-                self.compile_string(self.tkzr.token_type());
+                self.compile_string();
             }
             TokenType::Identifier(_) => {
-                self.compile_identifier(self.tkzr.token_type());
+                self.compile_identifier();
             }
         };
 }
 
-    fn compile_key_world(&mut self, token: TokenType) {
-        if let TokenType::KeyWorld(key_world) = token {
+    fn compile_key_world(&mut self) {
+        if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
             self.write_start_event("keyword");
             let key_world = format!("{}", key_world);
             self.write_characters(&key_world);
             self.write_end_event();
+            self.tkzr.advance();
         } else {
-            panic!("{:?} is not a KeyWorld", token);
+            panic!("{:?} is not a KeyWorld", self.tkzr.token_type());
         }
     }
 
-    fn compile_symbol(&mut self, token: TokenType) {
-        if let TokenType::Symbol(symbol) = token {
+    fn compile_symbol(&mut self) {
+        if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
             self.write_start_event("symbol");
             self.write_characters(&symbol);
             self.write_end_event();
+            self.tkzr.advance();
         } else {
-            panic!("{:?} is not a Symbol", token);
+            panic!("{:?} is not a Symbol", self.tkzr.token_type());
         }
     }
 
-    fn compile_int(&mut self, token: TokenType) {
-        if let TokenType::IntConst(val) = token {
+    fn compile_int(&mut self) {
+        if let TokenType::IntConst(val) = self.tkzr.token_type() {
             self.write_start_event("integerConstant");
             self.write_characters(&val.to_string());
             self.write_end_event();
+            self.tkzr.advance();
         } else {
-            panic!("{:?} is not a IntConst", token);
+            panic!("{:?} is not a IntConst", self.tkzr.token_type());
         }
     }
 
-    fn compile_string(&mut self, token: TokenType) {
-        if let TokenType::StringConst(val) = token {
+    fn compile_string(&mut self) {
+        if let TokenType::StringConst(val) = self.tkzr.token_type() {
             self.write_start_event("stringConstant");
             self.write_characters(&val);
             self.write_end_event();
+            self.tkzr.advance();
         } else {
-            panic!("{:?} is not a StringConst", token);
+            panic!("{:?} is not a StringConst", self.tkzr.token_type());
         }
     }
 
-    fn compile_identifier(&mut self, token: TokenType) {
-        if let TokenType::Identifier(identifier) = token {
+    fn compile_identifier(&mut self) {
+        if let TokenType::Identifier(identifier) = self.tkzr.token_type() {
             self.write_start_event("identifier");
             self.write_characters(&identifier);
             self.write_end_event();
+            self.tkzr.advance();
         } else {
-            panic!("{:?} is not a Identifier", token);
+            panic!("{:?} is not a Identifier", self.tkzr.token_type());
         }
     }
 }
