@@ -93,7 +93,6 @@ impl CompilationEngine {
         self.write_start_event("subroutineBody");
         self.compile_symbol();
         let mut open_bracket_num = 1;
-        let mut statement_start = false;
         loop {
             if open_bracket_num == 0 {
                 break;
@@ -115,10 +114,6 @@ impl CompilationEngine {
                     match key_world {
                         KeyWorld::Var => self.compile_var_dec(),
                         KeyWorld::Let | KeyWorld::Do | KeyWorld::Return => {
-                            if !statement_start {
-                                self.write_start_event("statements");
-                                statement_start = true;
-                            }
                             self.compile_statements(); 
                         },
                         _ => self.compile_current_token(),
@@ -146,14 +141,20 @@ impl CompilationEngine {
     }
 
     fn compile_statements(&mut self) {
-        if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
-            match key_world {
-                KeyWorld::Let => self.compile_let(),
-                KeyWorld::Do => self.compile_do(),
-                KeyWorld::Return => self.compile_return(),
-                _ => {}
+        self.write_start_event("statements");
+        loop {
+            if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
+                match key_world {
+                    KeyWorld::Let => self.compile_let(),
+                    KeyWorld::Do => self.compile_do(),
+                    KeyWorld::Return => self.compile_return(),
+                    _ => break
+                }
+            } else {
+                break;
             }
         }
+        self.write_end_event();
     }
 
     fn compile_let(&mut self) {
@@ -181,6 +182,14 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    fn compile_if(&mut self) {
+        self.write_start_event("ifStatement");
+        self.compile_symbol();
+        self.compile_expression();
+        self.compile_symbol();
+        self.write_end_event();
+    }
+
     fn compile_expression(&mut self) {
         self.write_start_event("expression");
         self.compile_term();
@@ -191,6 +200,8 @@ impl CompilationEngine {
         self.write_start_event("term");
         if self.tkzr.next_token() == "." {
             self.compile_subroutine_call();
+        } else {
+            self.compile_current_token();
         }
         self.write_end_event();
     }
