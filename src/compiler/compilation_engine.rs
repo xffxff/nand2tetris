@@ -163,7 +163,11 @@ impl CompilationEngine {
     fn compile_let(&mut self) {
         self.write_start_event("letStatement");
         self.compile_key_world();
-        self.compile_identifier();
+        if self.tkzr.next_token() == "[" {
+            self.compile_array();
+        } else {
+            self.compile_identifier();
+        }
         self.compile_symbol();
         self.compile_expression();
         self.compile_symbol();
@@ -205,6 +209,8 @@ impl CompilationEngine {
         self.write_start_event("term");
         if self.tkzr.next_token() == "." {
             self.compile_subroutine_call();
+        } else if self.tkzr.next_token() == "[" {
+            self.compile_array();
         } else {
             self.compile_current_token();
         }
@@ -231,6 +237,13 @@ impl CompilationEngine {
         self.compile_symbol();
         self.compile_identifier();
         self.compile_expression_list();
+    }
+
+    fn compile_array(&mut self) {
+        self.compile_identifier();
+        self.compile_symbol();
+        self.compile_expression();
+        self.compile_symbol();
     }
 
     fn compile_current_token(&mut self) {
