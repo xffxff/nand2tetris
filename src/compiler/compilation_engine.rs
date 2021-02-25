@@ -66,7 +66,8 @@ impl CompilationEngine {
     fn compile_subroutine_dec(&mut self) {
         self.write_start_event("subroutineDec");
         self.compile_key_world();
-        self.compile_key_world();
+        // self.compile_key_world();
+        self.compile_current_token();
         self.compile_identifier();
         self.compile_parameter_list();
         self.compile_subroutine_body();
@@ -197,6 +198,9 @@ impl CompilationEngine {
     fn compile_return(&mut self) {
         self.write_start_event("returnStatement");
         self.compile_key_world();
+        if let TokenType::KeyWorld(_) = self.tkzr.token_type() {
+            self.compile_expression();
+        }
         self.compile_symbol();
         self.write_end_event();
     }
@@ -217,6 +221,7 @@ impl CompilationEngine {
                 } 
             }
         }
+        self.compile_symbol();
         self.write_end_event();
     }
 
@@ -231,7 +236,8 @@ impl CompilationEngine {
         self.write_start_event("expression");
         self.compile_term();
         if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
-            if symbol == "*" || symbol == "/" || symbol == "|" {
+            if symbol == "*" || symbol == "/" || symbol == "|" || symbol == "+" || symbol == "&lt;"
+                || symbol == "&amp;" || symbol == "&gt;" || symbol == "-" {
                 self.compile_symbol();
                 self.compile_term();
             }
@@ -273,8 +279,12 @@ impl CompilationEngine {
                 if symbol == ")" {
                     break;
                 }
+                if symbol == "," {
+                    self.compile_symbol();
+                }
             }
-            self.compile_current_token();
+            self.compile_expression();
+            // self.compile_current_token();
         }
         self.write_end_event();
         self.compile_symbol();
@@ -282,8 +292,10 @@ impl CompilationEngine {
 
     fn compile_subroutine_call(&mut self) {
         self.compile_identifier();
-        self.compile_symbol();
-        self.compile_identifier();
+        if self.tkzr.current_token == "." {
+            self.compile_symbol();
+            self.compile_identifier();
+        }
         self.compile_expression_list();
     }
 
@@ -298,10 +310,10 @@ impl CompilationEngine {
         match self.tkzr.token_type() {
             TokenType::KeyWorld(key_world) => {
                 match key_world {
-                    KeyWorld::Static => {
+                    KeyWorld::Static | KeyWorld::Field => {
                         self.compile_class_var_dec();
                     },
-                    KeyWorld::Function => {
+                    KeyWorld::Function | KeyWorld::Constructor | KeyWorld::Method => {
                         self.compile_subroutine_dec();
                     },
                     _ => {
