@@ -29,6 +29,7 @@ impl CompilationEngine {
         while self.tkzr.has_more_commands() {
             self.compile_current_token();
         }
+        self.compile_current_token();
         self.write_end_event();
     }
 
@@ -141,30 +142,30 @@ impl CompilationEngine {
     fn compile_statements(&mut self) {
         self.write_start_event("statements");
         loop {
-            println!("{:?}", self.tkzr.token_type());
             match self.tkzr.token_type() {
                 TokenType::KeyWorld(key_world) => {
                     match key_world {
                         KeyWorld::If => {
                             self.compile_if();
-                            self.compile_statements();
-                            self.write_end_event();
                         }
                         KeyWorld::Let => self.compile_let(),
                         KeyWorld::Do => self.compile_do(),
                         KeyWorld::Return => self.compile_return(),
-                        KeyWorld::Else => self.compile_else(),
+                        // KeyWorld::Else => self.compile_else(),
                         _ => break
                     }
                 },
-                TokenType::Symbol(_) => {
-                    self.compile_symbol();
-                    if self.tkzr.next_token() == Some("else".to_string()) {
-                        self.compile_else();
-                    } else {
-                        break;
-                    }
-                }
+                // TokenType::Symbol(symbol) => {
+                //     if symbol == "}" {
+                //         if self.tkzr.next_token() == Some("else".to_string()) {
+                //             self.compile_symbol();
+                //         } else {
+                //             break
+                //         }
+                //     } else {
+                //         break;
+                //     }
+                // }
                 _ => break
             } 
         }
@@ -207,7 +208,16 @@ impl CompilationEngine {
         self.compile_expression();
         self.compile_symbol();
         self.compile_symbol();
-        // self.write_end_event();
+        self.compile_statements();
+        if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
+            if symbol == "}" {
+                if self.tkzr.next_token() == Some("else".to_string()) {
+                    self.compile_symbol();
+                    self.compile_else();
+                } 
+            }
+        }
+        self.write_end_event();
     }
 
     fn compile_else(&mut self) {
@@ -220,17 +230,37 @@ impl CompilationEngine {
     fn compile_expression(&mut self) {
         self.write_start_event("expression");
         self.compile_term();
+        if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
+            if symbol == "*" || symbol == "/" || symbol == "|" {
+                self.compile_symbol();
+                self.compile_term();
+            }
+        }
         self.write_end_event();
     }
 
     fn compile_term(&mut self) {
         self.write_start_event("term");
-        if self.tkzr.next_token() == Some(".".to_string()) {
-            self.compile_subroutine_call();
-        } else if self.tkzr.next_token() == Some("[".to_string()) {
-            self.compile_array();
-        } else {
-            self.compile_current_token();
+        match self.tkzr.token_type() {
+            TokenType::Identifier(_) => {
+                if self.tkzr.next_token() == Some(".".to_string()) {
+                    self.compile_subroutine_call();
+                } else if self.tkzr.next_token() == Some("[".to_string()) {
+                    self.compile_array();
+                } else {
+                    self.compile_current_token();
+                }
+            },
+            TokenType::Symbol(symbol) => {
+                self.compile_symbol();
+                if symbol == "(" {
+                    self.compile_expression();
+                    self.compile_symbol();
+                } else {
+                    self.compile_term();
+                }
+            },
+            _ => self.compile_current_token(),
         }
         self.write_end_event();
     }
