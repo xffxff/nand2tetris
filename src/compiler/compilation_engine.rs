@@ -146,12 +146,11 @@ impl CompilationEngine {
             match self.tkzr.token_type() {
                 TokenType::KeyWorld(key_world) => {
                     match key_world {
-                        KeyWorld::If => {
-                            self.compile_if();
-                        }
+                        KeyWorld::If => self.compile_if(),
                         KeyWorld::Let => self.compile_let(),
                         KeyWorld::Do => self.compile_do(),
                         KeyWorld::Return => self.compile_return(),
+                        KeyWorld::While => self.compile_while(),
                         // KeyWorld::Else => self.compile_else(),
                         _ => break
                     }
@@ -205,6 +204,18 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    fn compile_while(&mut self) {
+        self.write_start_event("whileStatement");
+        self.compile_key_world();
+        self.compile_symbol();
+        self.compile_expression();
+        self.compile_symbol();
+        self.compile_symbol();
+        self.compile_statements();
+        self.compile_symbol();
+        self.write_end_event();
+    }
+
     fn compile_if(&mut self) {
         self.write_start_event("ifStatement");
         self.compile_key_world();
@@ -237,7 +248,7 @@ impl CompilationEngine {
         self.compile_term();
         if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
             if symbol == "*" || symbol == "/" || symbol == "|" || symbol == "+" || symbol == "&lt;"
-                || symbol == "&amp;" || symbol == "&gt;" || symbol == "-" {
+                || symbol == "&amp;" || symbol == "&gt;" || symbol == "-" || symbol == "=" {
                 self.compile_symbol();
                 self.compile_term();
             }
