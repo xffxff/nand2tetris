@@ -161,7 +161,7 @@ impl Tokenizer {
     pub fn next_token(&mut self) -> Option<String> {
         match self.tokens.front() {
             Some(v) => Some(v.to_owned()),
-            None => None
+            None => None,
         }
     }
 
@@ -244,7 +244,7 @@ impl Tokenizer {
         if symbols.contains(&self.current_token.as_str()) {
             match self.current_token.as_str() {
                 "<" => return Some("&lt;".to_string()),
-                ">" => return Some("&gt;".to_string()), 
+                ">" => return Some("&gt;".to_string()),
                 "\"" => return Some("&quot;".to_string()),
                 "&" => return Some("&amp;".to_string()),
                 _ => return Some(self.current_token.clone()),
