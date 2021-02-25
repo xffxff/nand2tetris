@@ -141,21 +141,32 @@ impl CompilationEngine {
     fn compile_statements(&mut self) {
         self.write_start_event("statements");
         loop {
-            if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
-                match key_world {
-                    KeyWorld::If => {
-                        self.compile_if();
-                        self.compile_statements();
-                        self.write_end_event();
+            println!("{:?}", self.tkzr.token_type());
+            match self.tkzr.token_type() {
+                TokenType::KeyWorld(key_world) => {
+                    match key_world {
+                        KeyWorld::If => {
+                            self.compile_if();
+                            self.compile_statements();
+                            self.write_end_event();
+                        }
+                        KeyWorld::Let => self.compile_let(),
+                        KeyWorld::Do => self.compile_do(),
+                        KeyWorld::Return => self.compile_return(),
+                        KeyWorld::Else => self.compile_else(),
+                        _ => break
                     }
-                    KeyWorld::Let => self.compile_let(),
-                    KeyWorld::Do => self.compile_do(),
-                    KeyWorld::Return => self.compile_return(),
-                    _ => break
+                },
+                TokenType::Symbol(_) => {
+                    self.compile_symbol();
+                    if self.tkzr.next_token() == Some("else".to_string()) {
+                        self.compile_else();
+                    } else {
+                        break;
+                    }
                 }
-            } else {
-                break;
-            }
+                _ => break
+            } 
         }
         self.write_end_event();
     }
@@ -163,7 +174,7 @@ impl CompilationEngine {
     fn compile_let(&mut self) {
         self.write_start_event("letStatement");
         self.compile_key_world();
-        if self.tkzr.next_token() == "[" {
+        if self.tkzr.next_token() == Some("[".to_string()) {
             self.compile_array();
         } else {
             self.compile_identifier();
@@ -199,6 +210,13 @@ impl CompilationEngine {
         // self.write_end_event();
     }
 
+    fn compile_else(&mut self) {
+        self.compile_key_world();
+        self.compile_symbol();
+        self.compile_statements();
+        self.compile_symbol();
+    }
+
     fn compile_expression(&mut self) {
         self.write_start_event("expression");
         self.compile_term();
@@ -207,9 +225,9 @@ impl CompilationEngine {
 
     fn compile_term(&mut self) {
         self.write_start_event("term");
-        if self.tkzr.next_token() == "." {
+        if self.tkzr.next_token() == Some(".".to_string()) {
             self.compile_subroutine_call();
-        } else if self.tkzr.next_token() == "[" {
+        } else if self.tkzr.next_token() == Some("[".to_string()) {
             self.compile_array();
         } else {
             self.compile_current_token();
@@ -282,7 +300,9 @@ impl CompilationEngine {
             let key_world = format!("{}", key_world);
             self.write_characters(&key_world);
             self.write_end_event();
-            self.tkzr.advance();
+            if self.tkzr.has_more_commands() {
+                self.tkzr.advance();
+            }
         } else {
             panic!("{:?} is not a KeyWorld", self.tkzr.token_type());
         }
@@ -293,7 +313,9 @@ impl CompilationEngine {
             self.write_start_event("symbol");
             self.write_characters(&symbol);
             self.write_end_event();
-            self.tkzr.advance();
+            if self.tkzr.has_more_commands() {
+                self.tkzr.advance();
+            }
         } else {
             panic!("{:?} is not a Symbol", self.tkzr.token_type());
         }
@@ -304,7 +326,9 @@ impl CompilationEngine {
             self.write_start_event("integerConstant");
             self.write_characters(&val.to_string());
             self.write_end_event();
-            self.tkzr.advance();
+            if self.tkzr.has_more_commands() {
+                self.tkzr.advance();
+            }
         } else {
             panic!("{:?} is not a IntConst", self.tkzr.token_type());
         }
@@ -315,7 +339,9 @@ impl CompilationEngine {
             self.write_start_event("stringConstant");
             self.write_characters(&val);
             self.write_end_event();
-            self.tkzr.advance();
+            if self.tkzr.has_more_commands() {
+                self.tkzr.advance();
+            }
         } else {
             panic!("{:?} is not a StringConst", self.tkzr.token_type());
         }
@@ -326,7 +352,9 @@ impl CompilationEngine {
             self.write_start_event("identifier");
             self.write_characters(&identifier);
             self.write_end_event();
-            self.tkzr.advance();
+            if self.tkzr.has_more_commands() {
+                self.tkzr.advance();
+            }
         } else {
             panic!("{:?} is not a Identifier", self.tkzr.token_type());
         }

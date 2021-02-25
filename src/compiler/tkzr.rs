@@ -158,8 +158,11 @@ impl Tokenizer {
         self.current_token = current_token;
     }
 
-    pub fn next_token(&mut self) -> String {
-        self.tokens.front().unwrap().to_owned()
+    pub fn next_token(&mut self) -> Option<String> {
+        match self.tokens.front() {
+            Some(v) => Some(v.to_owned()),
+            None => None
+        }
     }
 
     pub fn token_type(&self) -> TokenType {
