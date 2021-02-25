@@ -24,14 +24,12 @@ impl CompilationEngine {
     }
 
     pub fn compile_class(&mut self) {
-        let start_event: XmlEvent = XmlEvent::start_element("tokens").into();
-        self.writer.write(start_event).unwrap();
+        self.write_start_event("class");
         self.tkzr.advance();
         while self.tkzr.has_more_commands() {
             self.compile_current_token();
         }
-        let end_event: XmlEvent = XmlEvent::end_element().into();
-        self.writer.write(end_event).unwrap();
+        self.write_end_event();
     }
 
     fn write_start_event(&mut self, name: &str) {
@@ -105,15 +103,15 @@ impl CompilationEngine {
                     if symbol == "}" {
                         open_bracket_num -= 1;
                     }
-                    if open_bracket_num == 0 {
-                        self.write_end_event();
-                    }
+                    // if open_bracket_num == 0 {
+                    //     self.write_end_event();
+                    // }
                     self.compile_symbol();
                 }, 
                 TokenType::KeyWorld(key_world) => {
                     match key_world {
                         KeyWorld::Var => self.compile_var_dec(),
-                        KeyWorld::Let | KeyWorld::Do | KeyWorld::Return => {
+                        KeyWorld::Let | KeyWorld::Do | KeyWorld::Return | KeyWorld::If => {
                             self.compile_statements(); 
                         },
                         _ => self.compile_current_token(),
@@ -145,6 +143,11 @@ impl CompilationEngine {
         loop {
             if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
                 match key_world {
+                    KeyWorld::If => {
+                        self.compile_if();
+                        self.compile_statements();
+                        self.write_end_event();
+                    }
                     KeyWorld::Let => self.compile_let(),
                     KeyWorld::Do => self.compile_do(),
                     KeyWorld::Return => self.compile_return(),
@@ -184,10 +187,12 @@ impl CompilationEngine {
 
     fn compile_if(&mut self) {
         self.write_start_event("ifStatement");
+        self.compile_key_world();
         self.compile_symbol();
         self.compile_expression();
         self.compile_symbol();
-        self.write_end_event();
+        self.compile_symbol();
+        // self.write_end_event();
     }
 
     fn compile_expression(&mut self) {
