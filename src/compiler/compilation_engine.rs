@@ -229,10 +229,11 @@ impl CompilationEngine {
                 if self.tkzr.next_token() == Some("else".to_string()) {
                     self.compile_symbol();
                     self.compile_else();
+                } else {
+                    self.compile_symbol();
                 } 
-            }
-        }
-        self.compile_symbol();
+            } 
+        } 
         self.write_end_event();
     }
 
