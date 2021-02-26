@@ -23,13 +23,25 @@ impl CompilationEngine {
         CompilationEngine { tkzr, writer }
     }
 
+    // 'class' className '{' classVarDec* subroutineDec* '}'
     pub fn compile_class(&mut self) {
-        self.write_start_event("class");
         self.tkzr.advance();
-        while self.tkzr.has_more_commands() {
-            self.compile_current_token();
+        self.write_start_event("class");
+        self.compile_key_world();
+        self.compile_identifier();
+        self.compile_symbol();
+        while let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
+            match key_world {
+                KeyWorld::Static | KeyWorld::Field => {
+                    self.compile_class_var_dec();
+                },
+                KeyWorld::Function | KeyWorld::Method | KeyWorld::Constructor => {
+                    self.compile_subroutine_dec();
+                },
+                _ => break
+            }
         }
-        self.compile_current_token();
+        self.compile_symbol();
         self.write_end_event();
     }
 
@@ -48,26 +60,38 @@ impl CompilationEngine {
         self.writer.write(event).unwrap();
     }
 
+    // ('static' | 'field') type varName (',' varName)* ';'
     fn compile_class_var_dec(&mut self) {
         self.write_start_event("classVarDec");
         self.compile_key_world();
+        match self.tkzr.token_type() {
+            TokenType::KeyWorld(_) => self.compile_key_world(),
+            TokenType::Identifier(_) => self.compile_identifier(),
+            _ => panic!("{:?} is invalid, KeyWorld or Identifier is required", self.tkzr.token_type())
+        }
         loop {
+            self.compile_identifier();
             if let TokenType::Symbol(s) = self.tkzr.token_type() {
                 if s == ";" {
                     break;
                 }
             }
-            self.compile_current_token();
+            self.compile_symbol();
         }
         self.compile_symbol();
         self.write_end_event();
     }
 
+    // type: 'int'|'char'|'boolean'|className
+    // ('constructor'|'function'|'method')('void'|type) subroutineName
     fn compile_subroutine_dec(&mut self) {
         self.write_start_event("subroutineDec");
         self.compile_key_world();
-        // self.compile_key_world();
-        self.compile_current_token();
+        match self.tkzr.token_type() {
+            TokenType::KeyWorld(_) => self.compile_key_world(),
+            TokenType::Identifier(_) => self.compile_identifier(),
+            _ => panic!("{:?} is invalid, KeyWorld or Identifier is required", self.tkzr.token_type())
+        }
         self.compile_identifier();
         self.compile_parameter_list();
         self.compile_subroutine_body();
