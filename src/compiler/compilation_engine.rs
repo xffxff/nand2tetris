@@ -233,10 +233,11 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    // term(op term)*
     fn compile_expression(&mut self) {
         self.write_start_event("expression");
         self.compile_term();
-        if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
+        while let TokenType::Symbol(symbol) = self.tkzr.token_type() {
             if symbol == "*"
                 || symbol == "/"
                 || symbol == "|"
@@ -249,37 +250,53 @@ impl CompilationEngine {
             {
                 self.compile_symbol();
                 self.compile_term();
+            } else {
+                break
             }
         }
         self.write_end_event();
     }
 
+    // integerConstant | stringConstant | keywordConstant | varName |
+    // varName '[' expression ']' | subroutineCall | '(' expression ')' | unaryOp term
     fn compile_term(&mut self) {
         self.write_start_event("term");
         match self.tkzr.token_type() {
+            TokenType::IntConst(_) => self.compile_int(),
+            TokenType::StringConst(_) => self.compile_string(),
+            TokenType::KeyWorld(key_world) => {
+                match key_world {
+                    KeyWorld::This | KeyWorld::True | KeyWorld::False | KeyWorld::Null => {
+                        self.compile_key_world();
+                    },
+                    _ => panic!("{:?} is invalid in term", self.tkzr.token_type())
+                }
+            }
             TokenType::Identifier(_) => {
                 if self.tkzr.next_token() == Some(".".to_string()) {
                     self.compile_subroutine_call();
                 } else if self.tkzr.next_token() == Some("[".to_string()) {
                     self.compile_array();
                 } else {
-                    self.compile_current_token();
+                    self.compile_identifier();
                 }
             }
             TokenType::Symbol(symbol) => {
-                self.compile_symbol();
                 if symbol == "(" {
+                    self.compile_symbol();
                     self.compile_expression();
                     self.compile_symbol();
-                } else {
+                } else if symbol == "-" || symbol == "~" {
+                    self.compile_symbol();
                     self.compile_term();
                 }
             }
-            _ => self.compile_current_token(),
+            _ => panic!("{:?} is a invalid token in term", self.tkzr.token_type()),
         }
         self.write_end_event();
     }
 
+    // (expression( ',' expression)*)?
     fn compile_expression_list(&mut self) {
         self.compile_symbol();
         self.write_start_event("expressionList");
@@ -288,12 +305,11 @@ impl CompilationEngine {
                 if symbol == ")" {
                     break;
                 }
-                if symbol == "," {
+                if symbol == "," { // Todo(zhoufan): why if
                     self.compile_symbol();
                 }
             }
             self.compile_expression();
-            // self.compile_current_token();
         }
         self.write_end_event();
         self.compile_symbol();
@@ -313,34 +329,6 @@ impl CompilationEngine {
         self.compile_symbol();
         self.compile_expression();
         self.compile_symbol();
-    }
-
-    fn compile_current_token(&mut self) {
-        match self.tkzr.token_type() {
-            TokenType::KeyWorld(key_world) => match key_world {
-                KeyWorld::Static | KeyWorld::Field => {
-                    self.compile_class_var_dec();
-                }
-                KeyWorld::Function | KeyWorld::Constructor | KeyWorld::Method => {
-                    self.compile_subroutine_dec();
-                }
-                _ => {
-                    self.compile_key_world();
-                }
-            },
-            TokenType::Symbol(_) => {
-                self.compile_symbol();
-            }
-            TokenType::IntConst(_) => {
-                self.compile_int();
-            }
-            TokenType::StringConst(_) => {
-                self.compile_string();
-            }
-            TokenType::Identifier(_) => {
-                self.compile_identifier();
-            }
-        };
     }
 
     fn compile_key_world(&mut self) {
