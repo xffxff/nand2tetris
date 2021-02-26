@@ -6,7 +6,7 @@ use std::io::BufReader;
 use std::path::Path;
 
 #[derive(Debug, PartialEq)]
-pub enum KeyWorld {
+pub enum KeyWord {
     Class,
     Method,
     Function,
@@ -30,37 +30,37 @@ pub enum KeyWorld {
     This,
 }
 
-impl fmt::Display for KeyWorld {
+impl fmt::Display for KeyWord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            KeyWorld::Class => write!(f, "class"),
-            KeyWorld::Method => write!(f, "method"),
-            KeyWorld::Function => write!(f, "function"),
-            KeyWorld::Constructor => write!(f, "constructor"),
-            KeyWorld::Int => write!(f, "int"),
-            KeyWorld::Boolean => write!(f, "boolean"),
-            KeyWorld::Char => write!(f, "char"),
-            KeyWorld::Void => write!(f, "void"),
-            KeyWorld::Var => write!(f, "var"),
-            KeyWorld::Static => write!(f, "static"),
-            KeyWorld::Field => write!(f, "field"),
-            KeyWorld::Let => write!(f, "let"),
-            KeyWorld::Do => write!(f, "do"),
-            KeyWorld::If => write!(f, "if"),
-            KeyWorld::Else => write!(f, "else"),
-            KeyWorld::While => write!(f, "while"),
-            KeyWorld::Return => write!(f, "return"),
-            KeyWorld::True => write!(f, "true"),
-            KeyWorld::False => write!(f, "false"),
-            KeyWorld::Null => write!(f, "null"),
-            KeyWorld::This => write!(f, "this"),
+            KeyWord::Class => write!(f, "class"),
+            KeyWord::Method => write!(f, "method"),
+            KeyWord::Function => write!(f, "function"),
+            KeyWord::Constructor => write!(f, "constructor"),
+            KeyWord::Int => write!(f, "int"),
+            KeyWord::Boolean => write!(f, "boolean"),
+            KeyWord::Char => write!(f, "char"),
+            KeyWord::Void => write!(f, "void"),
+            KeyWord::Var => write!(f, "var"),
+            KeyWord::Static => write!(f, "static"),
+            KeyWord::Field => write!(f, "field"),
+            KeyWord::Let => write!(f, "let"),
+            KeyWord::Do => write!(f, "do"),
+            KeyWord::If => write!(f, "if"),
+            KeyWord::Else => write!(f, "else"),
+            KeyWord::While => write!(f, "while"),
+            KeyWord::Return => write!(f, "return"),
+            KeyWord::True => write!(f, "true"),
+            KeyWord::False => write!(f, "false"),
+            KeyWord::Null => write!(f, "null"),
+            KeyWord::This => write!(f, "this"),
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
-    KeyWorld(KeyWorld),
+    KeyWord(KeyWord),
     Symbol(String),
     Identifier(String),
     IntConst(i16),
@@ -171,7 +171,7 @@ impl Tokenizer {
     pub fn token_type(&self) -> TokenType {
         let key_world = self.key_world();
         if key_world.is_some() {
-            return TokenType::KeyWorld(key_world.unwrap());
+            return TokenType::KeyWord(key_world.unwrap());
         }
 
         let symbol = self.symbol();
@@ -191,49 +191,49 @@ impl Tokenizer {
         return TokenType::Identifier(self.current_token.clone());
     }
 
-    fn key_world(&self) -> Option<KeyWorld> {
+    fn key_world(&self) -> Option<KeyWord> {
         if self.current_token == "class" {
-            Some(KeyWorld::Class)
+            Some(KeyWord::Class)
         } else if self.current_token == "constructor" {
-            Some(KeyWorld::Constructor)
+            Some(KeyWord::Constructor)
         } else if self.current_token == "function" {
-            Some(KeyWorld::Function)
+            Some(KeyWord::Function)
         } else if self.current_token == "method" {
-            Some(KeyWorld::Method)
+            Some(KeyWord::Method)
         } else if self.current_token == "field" {
-            Some(KeyWorld::Field)
+            Some(KeyWord::Field)
         } else if self.current_token == "static" {
-            Some(KeyWorld::Static)
+            Some(KeyWord::Static)
         } else if self.current_token == "var" {
-            Some(KeyWorld::Var)
+            Some(KeyWord::Var)
         } else if self.current_token == "int" {
-            Some(KeyWorld::Int)
+            Some(KeyWord::Int)
         } else if self.current_token == "char" {
-            Some(KeyWorld::Char)
+            Some(KeyWord::Char)
         } else if self.current_token == "boolean" {
-            Some(KeyWorld::Boolean)
+            Some(KeyWord::Boolean)
         } else if self.current_token == "void" {
-            Some(KeyWorld::Void)
+            Some(KeyWord::Void)
         } else if self.current_token == "true" {
-            Some(KeyWorld::True)
+            Some(KeyWord::True)
         } else if self.current_token == "false" {
-            Some(KeyWorld::False)
+            Some(KeyWord::False)
         } else if self.current_token == "null" {
-            Some(KeyWorld::Null)
+            Some(KeyWord::Null)
         } else if self.current_token == "this" {
-            Some(KeyWorld::This)
+            Some(KeyWord::This)
         } else if self.current_token == "let" {
-            Some(KeyWorld::Let)
+            Some(KeyWord::Let)
         } else if self.current_token == "do" {
-            Some(KeyWorld::Do)
+            Some(KeyWord::Do)
         } else if self.current_token == "if" {
-            Some(KeyWorld::If)
+            Some(KeyWord::If)
         } else if self.current_token == "else" {
-            Some(KeyWorld::Else)
+            Some(KeyWord::Else)
         } else if self.current_token == "while" {
-            Some(KeyWorld::While)
+            Some(KeyWord::While)
         } else if self.current_token == "return" {
-            Some(KeyWorld::Return)
+            Some(KeyWord::Return)
         } else {
             None
         }

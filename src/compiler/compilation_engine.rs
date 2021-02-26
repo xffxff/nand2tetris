@@ -1,4 +1,4 @@
-use super::tkzr::{KeyWorld, TokenType, Tokenizer};
+use super::tkzr::{KeyWord, TokenType, Tokenizer};
 use std::fs::File;
 use std::path::Path;
 use xml::writer::{EmitterConfig, EventWriter, XmlEvent};
@@ -27,15 +27,15 @@ impl CompilationEngine {
     pub fn compile_class(&mut self) {
         self.tkzr.advance();
         self.write_start_event("class");
-        self.compile_key_world();
+        self.compile_key_word();
         self.compile_identifier();
         self.compile_symbol();
-        while let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
-            match key_world {
-                KeyWorld::Static | KeyWorld::Field => {
+        while let TokenType::KeyWord(key_word) = self.tkzr.token_type() {
+            match key_word {
+                KeyWord::Static | KeyWord::Field => {
                     self.compile_class_var_dec();
                 }
-                KeyWorld::Function | KeyWorld::Method | KeyWorld::Constructor => {
+                KeyWord::Function | KeyWord::Method | KeyWord::Constructor => {
                     self.compile_subroutine_dec();
                 }
                 _ => break,
@@ -63,7 +63,7 @@ impl CompilationEngine {
     // ('static' | 'field') type varName (',' varName)* ';'
     fn compile_class_var_dec(&mut self) {
         self.write_start_event("classVarDec");
-        self.compile_key_world();
+        self.compile_key_word();
         self.compile_type();
         loop {
             self.compile_identifier();
@@ -81,10 +81,10 @@ impl CompilationEngine {
     // type: 'int'|'char'|'boolean'|className
     fn compile_type(&mut self) {
         match self.tkzr.token_type() {
-            TokenType::KeyWorld(_) => self.compile_key_world(),
+            TokenType::KeyWord(_) => self.compile_key_word(),
             TokenType::Identifier(_) => self.compile_identifier(),
             _ => panic!(
-                "{:?} is invalid, KeyWorld or Identifier is required",
+                "{:?} is invalid, KeyWord or Identifier is required",
                 self.tkzr.token_type()
             ),
         }
@@ -93,7 +93,7 @@ impl CompilationEngine {
     // ('constructor'|'function'|'method')('void'|type) subroutineName
     fn compile_subroutine_dec(&mut self) {
         self.write_start_event("subroutineDec");
-        self.compile_key_world();
+        self.compile_key_word();
         self.compile_type();
         self.compile_identifier();
         self.compile_symbol(); // (
@@ -123,10 +123,10 @@ impl CompilationEngine {
     fn compile_subroutine_body(&mut self) {
         self.write_start_event("subroutineBody");
         self.compile_symbol();
-        while let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
-            match key_world {
-                KeyWorld::Var => self.compile_var_dec(),
-                KeyWorld::Let | KeyWorld::Do | KeyWorld::Return | KeyWorld::If => {
+        while let TokenType::KeyWord(key_word) = self.tkzr.token_type() {
+            match key_word {
+                KeyWord::Var => self.compile_var_dec(),
+                KeyWord::Let | KeyWord::Do | KeyWord::Return | KeyWord::If => {
                     self.compile_statements()
                 }
                 _ => {}
@@ -139,7 +139,7 @@ impl CompilationEngine {
     // 'var' type varName (',' varName)* ';'
     fn compile_var_dec(&mut self) {
         self.write_start_event("varDec");
-        self.compile_key_world();
+        self.compile_key_word();
         loop {
             if let TokenType::Symbol(s) = self.tkzr.token_type() {
                 self.compile_symbol();
@@ -155,13 +155,13 @@ impl CompilationEngine {
     // letStatement | ifStatement | whileStatement | doStatement | returnStatement
     fn compile_statements(&mut self) {
         self.write_start_event("statements");
-        while let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
-            match key_world {
-                KeyWorld::If => self.compile_if(),
-                KeyWorld::Let => self.compile_let(),
-                KeyWorld::Do => self.compile_do(),
-                KeyWorld::Return => self.compile_return(),
-                KeyWorld::While => self.compile_while(),
+        while let TokenType::KeyWord(key_word) = self.tkzr.token_type() {
+            match key_word {
+                KeyWord::If => self.compile_if(),
+                KeyWord::Let => self.compile_let(),
+                KeyWord::Do => self.compile_do(),
+                KeyWord::Return => self.compile_return(),
+                KeyWord::While => self.compile_while(),
                 _ => break,
             }
         }
@@ -171,7 +171,7 @@ impl CompilationEngine {
     // 'let' varName('[' expression ']')? '=' expression ';'
     fn compile_let(&mut self) {
         self.write_start_event("letStatement");
-        self.compile_key_world();
+        self.compile_key_word();
         // Todo(zhoufan): 2d array?
         if self.tkzr.next_token() == Some("[".to_string()) {
             self.compile_array();
@@ -187,7 +187,7 @@ impl CompilationEngine {
     // 'do' sobroutineCall ';'
     fn compile_do(&mut self) {
         self.write_start_event("doStatement");
-        self.compile_key_world();
+        self.compile_key_word();
         self.compile_subroutine_call();
         self.compile_symbol();
         self.write_end_event();
@@ -196,9 +196,9 @@ impl CompilationEngine {
     // 'return' expression? ';'
     fn compile_return(&mut self) {
         self.write_start_event("returnStatement");
-        self.compile_key_world();
+        self.compile_key_word();
         match self.tkzr.token_type() {
-            TokenType::KeyWorld(_) => self.compile_expression(),
+            TokenType::KeyWord(_) => self.compile_expression(),
             TokenType::Identifier(_) => self.compile_expression(),
             _ => {}
         }
@@ -209,7 +209,7 @@ impl CompilationEngine {
     // 'while' '(' expression ')' '{' statements '}'
     fn compile_while(&mut self) {
         self.write_start_event("whileStatement");
-        self.compile_key_world();
+        self.compile_key_word();
         self.compile_symbol();
         self.compile_expression();
         self.compile_symbol();
@@ -222,16 +222,16 @@ impl CompilationEngine {
     // 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
     fn compile_if(&mut self) {
         self.write_start_event("ifStatement");
-        self.compile_key_world();
+        self.compile_key_word();
         self.compile_symbol();
         self.compile_expression();
         self.compile_symbol();
         self.compile_symbol();
         self.compile_statements();
         self.compile_symbol();
-        if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
-            if key_world == KeyWorld::Else {
-                self.compile_key_world();
+        if let TokenType::KeyWord(key_word) = self.tkzr.token_type() {
+            if key_word == KeyWord::Else {
+                self.compile_key_word();
                 self.compile_symbol();
                 self.compile_statements();
                 self.compile_symbol();
@@ -271,9 +271,9 @@ impl CompilationEngine {
         match self.tkzr.token_type() {
             TokenType::IntConst(_) => self.compile_int(),
             TokenType::StringConst(_) => self.compile_string(),
-            TokenType::KeyWorld(key_world) => match key_world {
-                KeyWorld::This | KeyWorld::True | KeyWorld::False | KeyWorld::Null => {
-                    self.compile_key_world();
+            TokenType::KeyWord(key_word) => match key_word {
+                KeyWord::This | KeyWord::True | KeyWord::False | KeyWord::Null => {
+                    self.compile_key_word();
                 }
                 _ => panic!("{:?} is invalid in term", self.tkzr.token_type()),
             },
@@ -337,17 +337,17 @@ impl CompilationEngine {
         self.compile_symbol();
     }
 
-    fn compile_key_world(&mut self) {
-        if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
+    fn compile_key_word(&mut self) {
+        if let TokenType::KeyWord(key_word) = self.tkzr.token_type() {
             self.write_start_event("keyword");
-            let key_world = format!("{}", key_world);
-            self.write_characters(&key_world);
+            let key_word = format!("{}", key_word);
+            self.write_characters(&key_word);
             self.write_end_event();
             if self.tkzr.has_more_commands() {
                 self.tkzr.advance();
             }
         } else {
-            panic!("{:?} is not a KeyWorld", self.tkzr.token_type());
+            panic!("{:?} is not a KeyWord", self.tkzr.token_type());
         }
     }
 
