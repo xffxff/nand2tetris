@@ -291,14 +291,12 @@ impl CompilationEngine {
                     self.compile_term();
                 }
             }
-            _ => panic!("{:?} is a invalid token in term", self.tkzr.token_type()),
         }
         self.write_end_event();
     }
 
     // (expression( ',' expression)*)?
     fn compile_expression_list(&mut self) {
-        self.compile_symbol();
         self.write_start_event("expressionList");
         loop {
             if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
@@ -312,16 +310,18 @@ impl CompilationEngine {
             self.compile_expression();
         }
         self.write_end_event();
-        self.compile_symbol();
     }
 
+    // subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
     fn compile_subroutine_call(&mut self) {
         self.compile_identifier();
         if self.tkzr.current_token == "." {
             self.compile_symbol();
             self.compile_identifier();
         }
+        self.compile_symbol();
         self.compile_expression_list();
+        self.compile_symbol();
     }
 
     fn compile_array(&mut self) {
