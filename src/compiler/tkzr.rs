@@ -150,6 +150,7 @@ impl Tokenizer {
         if current_token == "\"" {
             let mut next_token = self.tokens.pop_front().unwrap();
             while next_token != "\"" {
+                current_token.push_str(" ");
                 current_token.push_str(&next_token);
                 next_token = self.tokens.pop_front().unwrap();
             }
