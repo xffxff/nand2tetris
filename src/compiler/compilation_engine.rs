@@ -131,21 +131,23 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    // 'var' type varName (',' varName)* ';'
     fn compile_var_dec(&mut self) {
         self.write_start_event("varDec");
         self.compile_key_world();
         loop {
             if let TokenType::Symbol(s) = self.tkzr.token_type() {
+                self.compile_symbol();
                 if s == ";" {
                     break;
                 }
             }
-            self.compile_current_token();
+            self.compile_type();
         }
-        self.compile_symbol();
         self.write_end_event();
     }
 
+    // letStatement | ifStatement | whileStatement | doStatement | returnStatement
     fn compile_statements(&mut self) {
         self.write_start_event("statements");
         while let TokenType::KeyWorld(key_world)  = self.tkzr.token_type() {
@@ -161,9 +163,11 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    // 'let' varName('[' expression ']')? '=' expression ';'
     fn compile_let(&mut self) {
         self.write_start_event("letStatement");
         self.compile_key_world();
+        // Todo(zhoufan): 2d array?
         if self.tkzr.next_token() == Some("[".to_string()) {
             self.compile_array();
         } else {
@@ -175,6 +179,7 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    // 'do' sobroutineCall ';'
     fn compile_do(&mut self) {
         self.write_start_event("doStatement");
         self.compile_key_world();
@@ -183,6 +188,7 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    // 'return' expression? ';'
     fn compile_return(&mut self) {
         self.write_start_event("returnStatement");
         self.compile_key_world();
@@ -193,6 +199,7 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    // 'while' '(' expression ')' '{' statements '}'
     fn compile_while(&mut self) {
         self.write_start_event("whileStatement");
         self.compile_key_world();
@@ -205,6 +212,7 @@ impl CompilationEngine {
         self.write_end_event();
     }
 
+    // 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
     fn compile_if(&mut self) {
         self.write_start_event("ifStatement");
         self.compile_key_world();
@@ -213,24 +221,16 @@ impl CompilationEngine {
         self.compile_symbol();
         self.compile_symbol();
         self.compile_statements();
-        if let TokenType::Symbol(symbol) = self.tkzr.token_type() {
-            if symbol == "}" {
-                if self.tkzr.next_token() == Some("else".to_string()) {
-                    self.compile_symbol();
-                    self.compile_else();
-                } else {
-                    self.compile_symbol();
-                }
+        self.compile_symbol();
+        if let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
+            if key_world == KeyWorld::Else {
+                self.compile_key_world();
+                self.compile_symbol();
+                self.compile_statements();
+                self.compile_symbol();
             }
         }
         self.write_end_event();
-    }
-
-    fn compile_else(&mut self) {
-        self.compile_key_world();
-        self.compile_symbol();
-        self.compile_statements();
-        self.compile_symbol();
     }
 
     fn compile_expression(&mut self) {
