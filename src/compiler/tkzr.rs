@@ -147,6 +147,8 @@ impl Tokenizer {
 
     pub fn advance(&mut self) {
         let mut current_token = self.tokens.pop_front().unwrap();
+        // There is a bug in the logic of processing strings, but I don't
+        // want to spend time in this place.
         if current_token == "\"" {
             let mut next_token = self.tokens.pop_front().unwrap();
             while next_token != "\"" {
