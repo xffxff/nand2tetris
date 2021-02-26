@@ -4,8 +4,8 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
-use xml::reader::{EventReader, XmlEvent};
 use nand2tetris_assember::compiler::compilation_engine::CompilationEngine;
+use xml::reader::{EventReader, XmlEvent};
 
 fn read_into_vec(path: &Path) -> Vec<String> {
     let f = File::open(path).unwrap();

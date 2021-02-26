@@ -34,11 +34,11 @@ impl CompilationEngine {
             match key_world {
                 KeyWorld::Static | KeyWorld::Field => {
                     self.compile_class_var_dec();
-                },
+                }
                 KeyWorld::Function | KeyWorld::Method | KeyWorld::Constructor => {
                     self.compile_subroutine_dec();
-                },
-                _ => break
+                }
+                _ => break,
             }
         }
         self.compile_symbol();
@@ -83,7 +83,10 @@ impl CompilationEngine {
         match self.tkzr.token_type() {
             TokenType::KeyWorld(_) => self.compile_key_world(),
             TokenType::Identifier(_) => self.compile_identifier(),
-            _ => panic!("{:?} is invalid, KeyWorld or Identifier is required", self.tkzr.token_type())
+            _ => panic!(
+                "{:?} is invalid, KeyWorld or Identifier is required",
+                self.tkzr.token_type()
+            ),
         }
     }
 
@@ -123,7 +126,9 @@ impl CompilationEngine {
         while let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
             match key_world {
                 KeyWorld::Var => self.compile_var_dec(),
-                KeyWorld::Let | KeyWorld::Do | KeyWorld::Return | KeyWorld::If => self.compile_statements(),
+                KeyWorld::Let | KeyWorld::Do | KeyWorld::Return | KeyWorld::If => {
+                    self.compile_statements()
+                }
                 _ => {}
             }
         }
@@ -150,7 +155,7 @@ impl CompilationEngine {
     // letStatement | ifStatement | whileStatement | doStatement | returnStatement
     fn compile_statements(&mut self) {
         self.write_start_event("statements");
-        while let TokenType::KeyWorld(key_world)  = self.tkzr.token_type() {
+        while let TokenType::KeyWorld(key_world) = self.tkzr.token_type() {
             match key_world {
                 KeyWorld::If => self.compile_if(),
                 KeyWorld::Let => self.compile_let(),
@@ -253,7 +258,7 @@ impl CompilationEngine {
                 self.compile_symbol();
                 self.compile_term();
             } else {
-                break
+                break;
             }
         }
         self.write_end_event();
@@ -266,14 +271,12 @@ impl CompilationEngine {
         match self.tkzr.token_type() {
             TokenType::IntConst(_) => self.compile_int(),
             TokenType::StringConst(_) => self.compile_string(),
-            TokenType::KeyWorld(key_world) => {
-                match key_world {
-                    KeyWorld::This | KeyWorld::True | KeyWorld::False | KeyWorld::Null => {
-                        self.compile_key_world();
-                    },
-                    _ => panic!("{:?} is invalid in term", self.tkzr.token_type())
+            TokenType::KeyWorld(key_world) => match key_world {
+                KeyWorld::This | KeyWorld::True | KeyWorld::False | KeyWorld::Null => {
+                    self.compile_key_world();
                 }
-            }
+                _ => panic!("{:?} is invalid in term", self.tkzr.token_type()),
+            },
             TokenType::Identifier(_) => {
                 if self.tkzr.next_token() == Some(".".to_string()) {
                     self.compile_subroutine_call();
@@ -305,7 +308,8 @@ impl CompilationEngine {
                 if symbol == ")" {
                     break;
                 }
-                if symbol == "," { // Todo(zhoufan): why if
+                if symbol == "," {
+                    // Todo(zhoufan): why if
                     self.compile_symbol();
                 }
             }
