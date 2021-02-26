@@ -192,8 +192,10 @@ impl CompilationEngine {
     fn compile_return(&mut self) {
         self.write_start_event("returnStatement");
         self.compile_key_world();
-        if let TokenType::KeyWorld(_) = self.tkzr.token_type() {
-            self.compile_expression();
+        match self.tkzr.token_type() {
+            TokenType::KeyWorld(_) => self.compile_expression(),
+            TokenType::Identifier(_) => self.compile_expression(),
+            _ => {}
         }
         self.compile_symbol();
         self.write_end_event();

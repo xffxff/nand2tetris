@@ -74,3 +74,33 @@ fn test_square_square_game() {
     let other = Path::new("tests/compiler/Square/SquareGame.xml");
     assert!(compare_two_files(one, other));
 }
+
+#[test]
+fn test_exp_less_square_main() {
+    let path = Path::new("tests/compiler/ExpressionLessSquare/Main.jack");
+    let mut compiler = CompilationEngine::new(path);
+    compiler.compile_class();
+    let one = Path::new("tests/compiler/ExpressionLessSquare/MainT.xml");
+    let other = Path::new("tests/compiler/ExpressionLessSquare/Main.xml");
+    assert!(compare_two_files(one, other));
+}
+
+#[test]
+fn test_exp_less_square() {
+    let path = Path::new("tests/compiler/ExpressionLessSquare/Square.jack");
+    let mut compiler = CompilationEngine::new(path);
+    compiler.compile_class();
+    let one = Path::new("tests/compiler/ExpressionLessSquare/SquareT.xml");
+    let other = Path::new("tests/compiler/ExpressionLessSquare/Square.xml");
+    assert!(compare_two_files(one, other));
+}
+
+#[test]
+fn test_exp_less_square_game() {
+    let path = Path::new("tests/compiler/ExpressionLessSquare/SquareGame.jack");
+    let mut compiler = CompilationEngine::new(path);
+    compiler.compile_class();
+    let one = Path::new("tests/compiler/ExpressionLessSquare/SquareGameT.xml");
+    let other = Path::new("tests/compiler/ExpressionLessSquare/SquareGame.xml");
+    assert!(compare_two_files(one, other));
+}
