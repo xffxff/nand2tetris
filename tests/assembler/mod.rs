@@ -18,9 +18,9 @@ fn compare_two_files(one: &Path, other: &Path) -> bool {
         let one_size = one_reader.read_line(&mut one_line).unwrap();
         other_line.clear();
         let other_size = other_reader.read_line(&mut other_line).unwrap();
-        if one_size != other_size || one_line != other_line {
+        if one_line.trim() != other_line.trim() {
             equal = false;
-            println!("{} and {} are not equal", one_line, other_line);
+            println!("{} with size {} and {} with size {} are not equal", one_line, one_size, other_line, other_size);
             break;
         }
 
@@ -32,7 +32,7 @@ fn compare_two_files(one: &Path, other: &Path) -> bool {
     equal
 }
 
-fn get_filename(name: &str) -> PathBuf {
+fn get_filepath(name: &str) -> PathBuf {
     let mut path = PathBuf::new();
     path.push("tests/assembler");
     path.push(name);
@@ -40,12 +40,13 @@ fn get_filename(name: &str) -> PathBuf {
 }
 
 fn test_assembler(filename: &str) {
-    let mut assembler = Assembler::new(&get_filename(filename));
+    let mut assembler = Assembler::new(&get_filepath(filename));
     assembler.run();
-    assert!(compare_two_files(
-        &get_filename(filename),
-        &get_filename(filename)
-    ));
+    let mut one_path = get_filepath(filename);
+    one_path.set_extension("hack");
+    let mut other_path = one_path.clone();
+    other_path.set_extension("cmp");
+    assert!(compare_two_files(&one_path, &other_path));
 }
 
 #[test]
