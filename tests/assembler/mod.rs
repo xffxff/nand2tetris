@@ -1,5 +1,5 @@
 // use nand2tetris_assember::run;
-use nand2tetris_assember::assembler::Assembler;
+use nand2tetris::assembler::Assembler;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
