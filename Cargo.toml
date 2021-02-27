@@ -1,5 +1,5 @@
 [package]
-name = "nand2tetris-assember"
+name = "nand2tetris"
 version = "0.1.0"
 authors = ["xffxff <1247714429@qq.com>"]
 edition = "2018"

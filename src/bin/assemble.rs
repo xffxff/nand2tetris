@@ -1,4 +1,4 @@
-use nand2tetris_assember::assembler::Assembler;
+use nand2tetris::assembler::Assembler;
 use std::env;
 use std::path::Path;
 
